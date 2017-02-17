@@ -1,0 +1,15 @@
+int LOL = 3+5;
+int L2 = LOL * 5;
+{
+    function boolean f (int i1, boolean it) {
+        return i1 + 2;
+    }
+}
+
+START function void run (){ 
+    do f(6, true);
+    readLine;
+}
+
+print do f(banaan);
+int aafa = readLine;
