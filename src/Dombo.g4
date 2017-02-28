@@ -3,22 +3,24 @@ grammar Dombo;
 program         : statement* 'START' functionDec statement*
                 ;
 
-statement       : varDec ';'                    #VariableDeclaration
-                | block                         #CodeBlock
-                | ifStatement                   #If
-                | whileLoop                     #While
-                | forLoop                       #For
-                | functionDec                   #FunctionDeclaration
-                | globalVarDec ';'              #GlobalVariableDeclaration
-                | printStatement ';'            #Print
-                | readStatement ';'             #Read
-                | 'return' expression ';'       #Return
-                | functionCall ';'              #FunctionCaller
+statement       : varDec ';'
+                | block
+                | ifStatement
+                | whileLoop
+                | forLoop
+                | functionDec
+                | globalVarDec ';'
+                | printStatement ';'
+                | readStatement ';'
+                | 'return' expression ';'
+                | functionCall ';'
                 ;
 
-varDec          : DATATYPE ID '=' expression;
+varDec          : DATATYPE ID '=' expression                                        #VarDeclaration
+                ;
 
-block           : '{' statement* '}';
+block           : '{' statement* '}'                                                #Scope
+                ;
 
 expression      : calcExpression
                 | logicExpression
@@ -41,32 +43,36 @@ logicExpression : leftLogic=logicExpression op=('==' | '!=' | 'and' | 'or') righ
                 | ID                                                                                            #BoolVariable
                 ;
 
-ifStatement     : 'if' '(' condition=logicExpression ')' block
-                | 'if' '(' condition=logicExpression ')' block 'else' block
+ifStatement     : 'if' '(' condition=logicExpression ')' block                          #IfSingleStatement
+                | 'if' '(' condition=logicExpression ')' block 'else' block             #IfElseStatement
+                | 'if' '(' condition=logicExpression ')' block 'else' ifStatement       #IfElseIfStatement
                 ;
 
-whileLoop       : 'while' '(' conditon=logicExpression ')' block
+whileLoop       : 'while' '(' conditon=logicExpression ')' block                                                                    #While
                 ;
 
-forLoop         : 'for' '(' varDec ';' condition=logicExpression ';' varDec ')' block
+forLoop         : 'for' '(' varDec ';' condition=logicExpression ';' varDec ')' block                                               #For
                 ;
 
-functionDec     : 'function' DATATYPE ID '(' ((DATATYPE ID ',')* (DATATYPE ID))? ')' block
+functionDec     : 'function' returntype=DATATYPE name=ID '(' ((parameters+=DATATYPE ID ',')* (parameters+=DATATYPE ID))? ')' block  #FunctionDeclaration
                 ;
 
-functionCall    : 'do' ID '(' ((parameter ',')* (parameter))? ')'
+functionCall    : 'do' ID '(' ((parameters+=parameter ',')* (parameters+=parameter))? ')'                                           #Function
                 ;
 
-globalVarDec    : 'global' DATATYPE ID '=' expression
+globalVarDec    : 'global' DATATYPE ID '=' expression                                   #GlobalDec
                 ;
 
-printStatement  : 'print' expression
+printStatement  : 'print' expression                                                    #PrintCommand
                 ;
 
-readStatement   : 'readLine'
+readStatement   : 'readLine'                                                            #ReadCommand
                 ;
 
-parameter       : ID | calcExpression | logicExpression;
+parameter       : ID
+                | calcExpression
+                | logicExpression
+                ;
 
 DATATYPE        : 'int' | 'boolean' | 'void';
 BOOLEANVALUE    : 'true' | 'false';
