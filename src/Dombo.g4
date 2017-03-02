@@ -12,11 +12,12 @@ statement       : varDec ';'
                 | globalVarDec ';'
                 | printStatement ';'
                 | readStatement ';'
-                | 'return' expression ';'
+                | returnStatement ';'
                 | functionCall ';'
                 ;
 
 varDec          : DATATYPE ID '=' expression                                        #VarDeclaration
+                | DATATYPE ID                                                       #GenericVarDeclaration
                 ;
 
 block           : '{' statement* '}'                                                #Scope
@@ -54,13 +55,13 @@ whileLoop       : 'while' '(' conditon=logicExpression ')' block                
 forLoop         : 'for' '(' varDec ';' condition=logicExpression ';' varDec ')' block                                               #For
                 ;
 
-functionDec     : 'function' returntype=DATATYPE name=ID '(' ((parameters+=DATATYPE ID ',')* (parameters+=DATATYPE ID))? ')' block  #FunctionDeclaration
+functionDec     : 'function' returntype=RETURNTYPE name=ID '(' ((parameters+=DATATYPE ID ',')* (parameters+=DATATYPE ID))? ')' block  #FunctionDeclaration
                 ;
 
 functionCall    : 'do' ID '(' ((parameters+=parameter ',')* (parameters+=parameter))? ')'                                           #Function
                 ;
 
-globalVarDec    : 'global' DATATYPE ID '=' expression                                   #GlobalDec
+globalVarDec    : 'global' varDec                                                       #GlobalDec
                 ;
 
 printStatement  : 'print' expression                                                    #PrintCommand
@@ -69,12 +70,16 @@ printStatement  : 'print' expression                                            
 readStatement   : 'readLine'                                                            #ReadCommand
                 ;
 
+returnStatement : 'return' statement                                                    #ReturnCommand
+                ;
+
 parameter       : ID
                 | calcExpression
                 | logicExpression
                 ;
 
-DATATYPE        : 'int' | 'boolean' | 'void';
+DATATYPE        : 'int' | 'boolean';
+RETURNTYPE      : DATATYPE | 'void';
 BOOLEANVALUE    : 'true' | 'false';
 ID              : [A-Za-z] [A-Za-z0-9]*;
 INT             : '0' | [1-9][0-9]*;

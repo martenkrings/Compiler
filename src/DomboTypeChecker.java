@@ -5,8 +5,11 @@ import org.antlr.v4.runtime.tree.ParseTree;
  */
 public class DomboTypeChecker extends DomboBaseVisitor {
 
+    private Scope programScope;
+
     @Override
     public Object visitProgram(DomboParser.ProgramContext ctx) {
+        programScope = new Scope();
         return super.visitProgram(ctx);
     }
 
@@ -18,6 +21,11 @@ public class DomboTypeChecker extends DomboBaseVisitor {
     @Override
     public Object visitVarDeclaration(DomboParser.VarDeclarationContext ctx) {
         return super.visitVarDeclaration(ctx);
+    }
+
+    @Override
+    public Object visitGenericVarDeclaration(DomboParser.GenericVarDeclarationContext ctx) {
+        return super.visitGenericVarDeclaration(ctx);
     }
 
     @Override
@@ -47,6 +55,7 @@ public class DomboTypeChecker extends DomboBaseVisitor {
 
     @Override
     public Object visitIntVariable(DomboParser.IntVariableContext ctx) {
+
         return super.visitIntVariable(ctx);
     }
 
