@@ -7,4 +7,22 @@ public class DataType extends Type{
     public DataType(DataTypeEnum type) {
         this.type = type;
     }
+
+    public DataType(String type) {
+        switch (type){
+            case "INT" :
+                this.type = DataTypeEnum.INT;
+                break;
+            case "BOOLEAN":
+                this.type = DataTypeEnum.BOOLEAN;
+                break;
+            case "STRING":
+                this.type = DataTypeEnum.STRING;
+                break;
+        }
+    }
+
+    public String getType() {
+        return type.toString();
+    }
 }

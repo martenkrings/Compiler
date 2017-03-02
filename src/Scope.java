@@ -1,3 +1,5 @@
+import com.sun.istack.internal.Nullable;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +37,7 @@ public class Scope {
         return s;
     }
 
+    @Nullable
     public Symbol lookUpVariable(String identifier) {
         return symbolTable.get(identifier);
     }
@@ -48,6 +51,10 @@ public class Scope {
     }
 
     public Scope closeScope() {
+        return parentScope;
+    }
+
+    public Scope getParentScope() {
         return parentScope;
     }
 }

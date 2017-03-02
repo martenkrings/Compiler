@@ -12,15 +12,17 @@ statement       : varDec ';'
                 | globalVarDec ';'
                 | printStatement ';'
                 | readStatement ';'
-                | returnStatement ';'
                 | functionCall ';'
                 ;
 
-varDec          : DATATYPE ID '=' expression                                        #VarDeclaration
+varDec          : DATATYPE ID '=' value=expression                                  #VarDeclaration
                 | DATATYPE ID                                                       #GenericVarDeclaration
                 ;
 
 block           : '{' statement* '}'                                                #Scope
+                ;
+
+functionBlock   : '{' statement* returnStatement '}'                                #FunctionScope
                 ;
 
 expression      : calcExpression
@@ -55,7 +57,7 @@ whileLoop       : 'while' '(' conditon=logicExpression ')' block                
 forLoop         : 'for' '(' varDec ';' condition=logicExpression ';' varDec ')' block                                               #For
                 ;
 
-functionDec     : 'function' returntype=RETURNTYPE name=ID '(' ((parameters+=DATATYPE ID ',')* (parameters+=DATATYPE ID))? ')' block  #FunctionDeclaration
+functionDec     : 'function' returntype=RETURNTYPE name=ID '(' ((parameters+=DATATYPE ID ',')* (parameters+=DATATYPE ID))? ')' functionBlock  #FunctionDeclaration
                 ;
 
 functionCall    : 'do' ID '(' ((parameters+=parameter ',')* (parameters+=parameter))? ')'                                           #Function

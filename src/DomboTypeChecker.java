@@ -1,62 +1,152 @@
 import org.antlr.v4.runtime.tree.ParseTree;
 
+import java.util.Stack;
+
 /**
  * Created by Marten on 2/28/2017.
  */
 public class DomboTypeChecker extends DomboBaseVisitor {
 
-    private Scope programScope;
+    private Stack<Scope> scopes;
 
     @Override
     public Object visitProgram(DomboParser.ProgramContext ctx) {
-        programScope = new Scope();
+        scopes = new Stack<>();
+        scopes.add(new Scope());
         return super.visitProgram(ctx);
     }
 
     @Override
     public Object visitStatement(DomboParser.StatementContext ctx) {
+        //Visit children
         return super.visitStatement(ctx);
     }
 
     @Override
-    public Object visitVarDeclaration(DomboParser.VarDeclarationContext ctx) {
-        return super.visitVarDeclaration(ctx);
+    public Object visitVarDeclaration(DomboParser.VarDeclarationContext ctx) throws TypeError {
+        //Get declared dataType and actual dataType
+        String datatype = ctx.DATATYPE().getText();
+        DataType actualDataType = (DataType) visit(ctx.value);
+
+        //Compare declared and actual dataType
+        if (!actualDataType.getType().equals(datatype)){
+            throw new TypeError(datatype + " and " + actualDataType + " type mismatch");
+
+        }
+
+        //Add variable
+        scopes.peek().declareVariable(ctx.ID().getText(), actualDataType);
+        super.visitVarDeclaration(ctx);
+
+        return actualDataType;
     }
 
     @Override
     public Object visitGenericVarDeclaration(DomboParser.GenericVarDeclarationContext ctx) {
-        return super.visitGenericVarDeclaration(ctx);
+        //Add a new variable to the current scope
+        scopes.peek().declareVariable(ctx.ID().getText(), new DataType(ctx.DATATYPE().getText()));
+
+        //Visit children
+        super.visitGenericVarDeclaration(ctx);
+
+        return null;
     }
 
     @Override
     public Object visitScope(DomboParser.ScopeContext ctx) {
-        return super.visitScope(ctx);
+        //Make a new scope and add it to the stack
+        scopes.add(new Scope(scopes.peek()));
+
+        //Visit children
+        super.visitScope(ctx);
+
+        //close scope
+        scopes.pop();
+
+        //scope doesn't have a type to return
+        return null;
     }
 
     @Override
     public Object visitExpression(DomboParser.ExpressionContext ctx) {
+        //Visit Children
         return super.visitExpression(ctx);
     }
 
     @Override
-    public Object visitAddOp(DomboParser.AddOpContext ctx) {
-        return super.visitAddOp(ctx);
+    public Object visitAddOp(DomboParser.AddOpContext ctx) throws TypeError {
+        //Get left and right dataTypes by visiting children
+        DataType leftDataType = (DataType) visit(ctx.left);
+        DataType rightDataType = (DataType) visit(ctx.right);
+
+        //compare types
+        if (!leftDataType.getType().equals(rightDataType.getType())){
+            //throw error if types missmatch
+            throw new TypeError(leftDataType + " and " + rightDataType + " type missmatch");
+
+        }
+        return leftDataType;
     }
 
     @Override
-    public Object visitNegateOp(DomboParser.NegateOpContext ctx) {
-        return super.visitNegateOp(ctx);
+    public Object visitNegateOp(DomboParser.NegateOpContext ctx) throws TypeError {
+        //Visit children
+        DataType dataType = (DataType) super.visitNegateOp(ctx);
+        if (!dataType.getType().equals(DataTypeEnum.INT.toString())){
+            throw new TypeError("negate op only usable on INT variables");
+
+        }
+
+        //return dataType
+        return dataType;
     }
 
     @Override
-    public Object visitMulOp(DomboParser.MulOpContext ctx) {
-        return super.visitMulOp(ctx);
+    public Object visitMulOp(DomboParser.MulOpContext ctx) throws TypeError {
+        //Get left and right dataTypes by visiting children
+        DataType leftDataType = (DataType) visit(ctx.left);
+        DataType rightDataType = (DataType) visit(ctx.right);
+
+
+        //compare types
+        if (!leftDataType.getType().equals(rightDataType.getType())){
+            //throw error if types missmatch
+            throw new TypeError(leftDataType + " and " + rightDataType + " type missmatch");
+
+        }
+
+        return leftDataType;
     }
 
     @Override
     public Object visitIntVariable(DomboParser.IntVariableContext ctx) {
+        Scope searchingScope = scopes.peek();
+        Symbol foundSymbol = null;
+        boolean found = false;
 
-        return super.visitIntVariable(ctx);
+        while (!found){
+            //if searching scope equals null then no matching id is found
+            if (searchingScope == null){
+                try {
+                    throw new TypeError(ctx.ID().getText() + " not initialized");
+                } catch (TypeError typeError) {
+                    typeError.printStackTrace();
+                }
+            }
+
+            //search scope for the symbol
+            foundSymbol = searchingScope.lookUpVariable(ctx.ID().getText());
+
+            //if no symbol is found try the next parent scope
+            if (foundSymbol == null){
+                searchingScope = searchingScope.getParentScope();
+            } else {
+                found = true;
+            }
+        }
+
+        //return the type of the found variable
+        return foundSymbol.type;
     }
 
     @Override
