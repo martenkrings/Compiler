@@ -13,6 +13,7 @@ statement       : varDec ';'
                 | printStatement ';'
                 | readStatement ';'
                 | functionCall ';'
+                | 'null;'
                 ;
 
 varDec          : DATATYPE ID '=' value=expression                                  #VarDeclaration
@@ -57,7 +58,7 @@ whileLoop       : 'while' '(' conditon=logicExpression ')' block                
 forLoop         : 'for' '(' varDec ';' condition=logicExpression ';' varDec ')' block                                               #For
                 ;
 
-functionDec     : 'function' returntype=RETURNTYPE name=ID '(' ((parameters+=DATATYPE ID ',')* (parameters+=DATATYPE ID))? ')' functionBlock  #FunctionDeclaration
+functionDec     : 'function' returntype=(RETURNTYPE | DATATYPE) name=ID '(' ((parameters=DATATYPE ID ',')* (parameters=DATATYPE ID))? ')' functionBlock  #FunctionDeclaration
                 ;
 
 functionCall    : 'do' ID '(' ((parameters+=parameter ',')* (parameters+=parameter))? ')'                                           #Function
@@ -72,7 +73,7 @@ printStatement  : 'print' expression                                            
 readStatement   : 'readLine'                                                            #ReadCommand
                 ;
 
-returnStatement : 'return' statement                                                    #ReturnCommand
+returnStatement : 'return' expression ';'                                                    #ReturnCommand
                 ;
 
 parameter       : ID
@@ -81,7 +82,7 @@ parameter       : ID
                 ;
 
 DATATYPE        : 'int' | 'boolean';
-RETURNTYPE      : DATATYPE | 'void';
+RETURNTYPE      : 'void';
 BOOLEANVALUE    : 'true' | 'false';
 ID              : [A-Za-z] [A-Za-z0-9]*;
 INT             : '0' | [1-9][0-9]*;

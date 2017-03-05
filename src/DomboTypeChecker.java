@@ -5,33 +5,39 @@ import java.util.Stack;
 /**
  * Created by Marten on 2/28/2017.
  */
-public class DomboTypeChecker extends DomboBaseVisitor {
+public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     private Stack<Scope> scopes;
 
     @Override
-    public Object visitProgram(DomboParser.ProgramContext ctx) {
+    public DataType visitProgram(DomboParser.ProgramContext ctx) {
         scopes = new Stack<>();
         scopes.add(new Scope());
         return super.visitProgram(ctx);
     }
 
     @Override
-    public Object visitStatement(DomboParser.StatementContext ctx) {
+    public DataType visitStatement(DomboParser.StatementContext ctx) {
         //Visit children
         return super.visitStatement(ctx);
     }
 
     @Override
-    public Object visitVarDeclaration(DomboParser.VarDeclarationContext ctx) throws TypeError {
+    public DataType visitVarDeclaration(DomboParser.VarDeclarationContext ctx) {
         //Get declared dataType and actual dataType
         String datatype = ctx.DATATYPE().getText();
         DataType actualDataType = (DataType) visit(ctx.value);
 
         //Compare declared and actual dataType
-        if (!actualDataType.getType().equals(datatype)){
-            throw new TypeError(datatype + " and " + actualDataType + " type mismatch");
+        if (actualDataType != null) {
+            if (!actualDataType.getType().equalsIgnoreCase(datatype)) {
+                try {
+                    throw new TypeError(datatype + " and " + actualDataType.getType() + " type mismatch");
+                } catch (TypeError typeError) {
+                    typeError.printStackTrace();
+                }
 
+            }
         }
 
         //Add variable
@@ -42,58 +48,69 @@ public class DomboTypeChecker extends DomboBaseVisitor {
     }
 
     @Override
-    public Object visitGenericVarDeclaration(DomboParser.GenericVarDeclarationContext ctx) {
+    public DataType visitGenericVarDeclaration(DomboParser.GenericVarDeclarationContext ctx) {
         //Add a new variable to the current scope
         scopes.peek().declareVariable(ctx.ID().getText(), new DataType(ctx.DATATYPE().getText()));
 
         //Visit children
-        super.visitGenericVarDeclaration(ctx);
-
-        return null;
+        return super.visitGenericVarDeclaration(ctx);
     }
 
+
+
     @Override
-    public Object visitScope(DomboParser.ScopeContext ctx) {
+    public DataType visitScope(DomboParser.ScopeContext ctx) {
         //Make a new scope and add it to the stack
         scopes.add(new Scope(scopes.peek()));
 
         //Visit children
-        super.visitScope(ctx);
+        DataType returnValue = super.visitScope(ctx);
 
         //close scope
         scopes.pop();
 
-        //scope doesn't have a type to return
-        return null;
+        //return
+        return returnValue;
     }
 
     @Override
-    public Object visitExpression(DomboParser.ExpressionContext ctx) {
+    public DataType visitExpression(DomboParser.ExpressionContext ctx) {
         //Visit Children
         return super.visitExpression(ctx);
     }
 
     @Override
-    public Object visitAddOp(DomboParser.AddOpContext ctx) throws TypeError {
+    public DataType visitAddOp(DomboParser.AddOpContext ctx) {
         //Get left and right dataTypes by visiting children
-        DataType leftDataType = (DataType) visit(ctx.left);
-        DataType rightDataType = (DataType) visit(ctx.right);
+        DataType leftDataType = visit(ctx.left);
+        DataType rightDataType = visit(ctx.right);
+
+        System.out.println("left: " + leftDataType);
+        System.out.println("right: " + rightDataType);
 
         //compare types
-        if (!leftDataType.getType().equals(rightDataType.getType())){
+        if (!leftDataType.getType().equalsIgnoreCase(rightDataType.getType())){
             //throw error if types missmatch
-            throw new TypeError(leftDataType + " and " + rightDataType + " type missmatch");
+            try {
+                throw new TypeError(leftDataType + " and " + rightDataType + " type missmatch");
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
+            }
 
         }
         return leftDataType;
     }
 
     @Override
-    public Object visitNegateOp(DomboParser.NegateOpContext ctx) throws TypeError {
+    public DataType visitNegateOp(DomboParser.NegateOpContext ctx) {
         //Visit children
         DataType dataType = (DataType) super.visitNegateOp(ctx);
         if (!dataType.getType().equals(DataTypeEnum.INT.toString())){
-            throw new TypeError("negate op only usable on INT variables");
+            try {
+                throw new TypeError("negate op only usable on INT variables");
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
+            }
 
         }
 
@@ -102,7 +119,7 @@ public class DomboTypeChecker extends DomboBaseVisitor {
     }
 
     @Override
-    public Object visitMulOp(DomboParser.MulOpContext ctx) throws TypeError {
+    public DataType visitMulOp(DomboParser.MulOpContext ctx) {
         //Get left and right dataTypes by visiting children
         DataType leftDataType = (DataType) visit(ctx.left);
         DataType rightDataType = (DataType) visit(ctx.right);
@@ -111,7 +128,11 @@ public class DomboTypeChecker extends DomboBaseVisitor {
         //compare types
         if (!leftDataType.getType().equals(rightDataType.getType())){
             //throw error if types missmatch
-            throw new TypeError(leftDataType + " and " + rightDataType + " type missmatch");
+            try {
+                throw new TypeError(leftDataType + " and " + rightDataType + " type missmatch");
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
+            }
 
         }
 
@@ -119,7 +140,7 @@ public class DomboTypeChecker extends DomboBaseVisitor {
     }
 
     @Override
-    public Object visitIntVariable(DomboParser.IntVariableContext ctx) {
+    public DataType visitIntVariable(DomboParser.IntVariableContext ctx) {
         Scope searchingScope = scopes.peek();
         Symbol foundSymbol = null;
         boolean found = false;
@@ -146,91 +167,103 @@ public class DomboTypeChecker extends DomboBaseVisitor {
         }
 
         //return the type of the found variable
-        return foundSymbol.type;
+        return (DataType) foundSymbol.type;
     }
 
     @Override
-    public Object visitIntValue(DomboParser.IntValueContext ctx) {
-        return super.visitIntValue(ctx);
+    public DataType visitIntValue(DomboParser.IntValueContext ctx) {
+        //return DataType
+        return new DataType(DataTypeEnum.INT);
     }
 
     @Override
-    public Object visitCalcComparator(DomboParser.CalcComparatorContext ctx) {
+    public DataType visitCalcComparator(DomboParser.CalcComparatorContext ctx) {
         return super.visitCalcComparator(ctx);
     }
 
     @Override
-    public Object visitBoolValue(DomboParser.BoolValueContext ctx) {
-        return super.visitBoolValue(ctx);
+    public DataType visitBoolValue(DomboParser.BoolValueContext ctx) {
+        //return DataType
+        return new DataType(DataTypeEnum.BOOLEAN);
     }
 
     @Override
-    public Object visitLogicComparator(DomboParser.LogicComparatorContext ctx) {
+    public DataType visitLogicComparator(DomboParser.LogicComparatorContext ctx) {
         return super.visitLogicComparator(ctx);
     }
 
     @Override
-    public Object visitBoolVariable(DomboParser.BoolVariableContext ctx) {
+    public DataType visitBoolVariable(DomboParser.BoolVariableContext ctx) {
         return super.visitBoolVariable(ctx);
     }
 
     @Override
-    public Object visitNotOp(DomboParser.NotOpContext ctx) {
+    public DataType visitNotOp(DomboParser.NotOpContext ctx) {
         return super.visitNotOp(ctx);
     }
 
     @Override
-    public Object visitIfSingleStatement(DomboParser.IfSingleStatementContext ctx) {
+    public DataType visitIfSingleStatement(DomboParser.IfSingleStatementContext ctx) {
         return super.visitIfSingleStatement(ctx);
     }
 
     @Override
-    public Object visitIfElseStatement(DomboParser.IfElseStatementContext ctx) {
+    public DataType visitIfElseStatement(DomboParser.IfElseStatementContext ctx) {
         return super.visitIfElseStatement(ctx);
     }
 
     @Override
-    public Object visitIfElseIfStatement(DomboParser.IfElseIfStatementContext ctx) {
+    public DataType visitIfElseIfStatement(DomboParser.IfElseIfStatementContext ctx) {
         return super.visitIfElseIfStatement(ctx);
     }
 
     @Override
-    public Object visitWhile(DomboParser.WhileContext ctx) {
+    public DataType visitWhile(DomboParser.WhileContext ctx) {
         return super.visitWhile(ctx);
     }
 
     @Override
-    public Object visitFor(DomboParser.ForContext ctx) {
+    public DataType visitFor(DomboParser.ForContext ctx) {
         return super.visitFor(ctx);
     }
 
     @Override
-    public Object visitFunctionDeclaration(DomboParser.FunctionDeclarationContext ctx) {
+    public DataType visitFunctionDeclaration(DomboParser.FunctionDeclarationContext ctx) {
         return super.visitFunctionDeclaration(ctx);
     }
 
     @Override
-    public Object visitFunction(DomboParser.FunctionContext ctx) {
+    public DataType visitFunction(DomboParser.FunctionContext ctx) {
         return super.visitFunction(ctx);
     }
 
     @Override
-    public Object visitGlobalDec(DomboParser.GlobalDecContext ctx) {
+    public DataType visitGlobalDec(DomboParser.GlobalDecContext ctx) {
         return super.visitGlobalDec(ctx);
     }
 
     @Override
-    public Object visitPrintCommand(DomboParser.PrintCommandContext ctx) {
+    public DataType visitPrintCommand(DomboParser.PrintCommandContext ctx) {
         return super.visitPrintCommand(ctx);
     }
 
     @Override
-    public Object visitReadCommand(DomboParser.ReadCommandContext ctx) {
+    public DataType visitReadCommand(DomboParser.ReadCommandContext ctx) {
         return super.visitReadCommand(ctx);
     }
 
     @Override
-    public Object visitParameter(DomboParser.ParameterContext ctx) {
+    public DataType visitParameter(DomboParser.ParameterContext ctx) {
         return super.visitParameter(ctx);
+    }
+
+    @Override
+    public DataType visitFunctionScope(DomboParser.FunctionScopeContext ctx) {
+        return super.visitFunctionScope(ctx);
+    }
+
+    @Override
+    public DataType visitReturnCommand(DomboParser.ReturnCommandContext ctx) {
+        return super.visitReturnCommand(ctx);
     }
 }

@@ -37,8 +37,9 @@ public class Dombo {
 
         while( true ) {
             // Ask for expression
-            System.out.print("CALC> ");
-            String line = s.nextLine();
+            System.out.print("Test> ");
+//            String line = s.nextLine();
+            String line = "START function int test(){\n    int a = 3 - false;\n    return a;\n}";
             if( line.equals("exit") )
                 break;
 
