@@ -23,7 +23,7 @@ varDec          : DATATYPE ID '=' value=expression                              
 block           : '{' statement* '}'                                                #Scope
                 ;
 
-functionBlock   : '{' statement* returnStatement '}'                                #FunctionScope
+functionBlock   : '{' statement* returnStatement '}'
                 ;
 
 expression      : calcExpression
@@ -58,7 +58,10 @@ whileLoop       : 'while' '(' conditon=logicExpression ')' block                
 forLoop         : 'for' '(' varDec ';' condition=logicExpression ';' varDec ')' block                                               #For
                 ;
 
-functionDec     : 'function' returntype=(RETURNTYPE | DATATYPE) name=ID '(' ((functionParameter ',')* (functionParameter))? ')' functionBlock  #FunctionDeclaration
+functionDec     : 'function' returntype=(RETURNTYPE | DATATYPE) name=ID functionTotal  #FunctionDeclaration
+                ;
+
+functionTotal   : '(' ((functionParameter ',')* (functionParameter))? ')' functionBlock
                 ;
 
 functionParameter: dataType=DATATYPE name=ID                                                                                           #FunctionPara
