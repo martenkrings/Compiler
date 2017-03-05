@@ -9,16 +9,12 @@ public class DataType extends Type{
     }
 
     public DataType(String type) {
-        switch (type){
-            case "INT" :
-                this.type = DataTypeEnum.INT;
-                break;
-            case "BOOLEAN":
-                this.type = DataTypeEnum.BOOLEAN;
-                break;
-            case "STRING":
-                this.type = DataTypeEnum.STRING;
-                break;
+        if (type.equalsIgnoreCase("int")){
+            this.type = DataTypeEnum.INT;
+        } else if (type.equalsIgnoreCase("boolean")){
+            this.type = DataTypeEnum.BOOLEAN;
+        } else if (type.equalsIgnoreCase("string")){
+            this.type = DataTypeEnum.STRING;
         }
     }
 

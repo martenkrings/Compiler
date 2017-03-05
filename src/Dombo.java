@@ -23,9 +23,9 @@ public class Dombo {
 
         // Evaluate by running the visitor
         DomboTypeChecker evaluator = new DomboTypeChecker();
-        Object value = evaluator.visit(expression);
+        DataType value = evaluator.visit(expression);
 
-        return value;
+        return value.getType();
     }
 
     /*
@@ -39,7 +39,7 @@ public class Dombo {
             // Ask for expression
             System.out.print("Test> ");
 //            String line = s.nextLine();
-            String line = "START function int test(){\n    int a = 3;\n boolean b = -false;\n int c = a + b;\n return a;\n}";
+            String line = "START function int test(int test1, boolean test2, int test3){\n    int a = test1;\n boolean b = test2;\n return a;\n}";
             if( line.equals("exit") )
                 break;
 

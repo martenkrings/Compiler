@@ -1,5 +1,7 @@
 import org.antlr.v4.runtime.tree.ParseTree;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Stack;
 
 /**
@@ -48,7 +50,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
     public DataType visitVarDeclaration(DomboParser.VarDeclarationContext ctx) {
         //Get declared dataType and actual dataType
         String datatype = ctx.DATATYPE().getText();
-        DataType actualDataType = (DataType) visit(ctx.value);
+        DataType actualDataType = visit(ctx.value);
 
         //Compare declared and actual dataType
         if (actualDataType != null) {
@@ -243,7 +245,33 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitFunctionDeclaration(DomboParser.FunctionDeclarationContext ctx) {
-        return super.visitFunctionDeclaration(ctx);
+        List<DataType> dataTypes = new ArrayList<DataType>() {
+        };
+
+        //add dataTypes of parameters
+        for (int i = 0; i < ctx.functionParameter().size(); i++){
+            dataTypes.add(visit(ctx.functionParameter().get(i)));
+        }
+
+        //declare new method
+        scopes.peek().declareMethod(ctx.name.getText(), new DataType(ctx.returntype.getText()), dataTypes);
+
+        //visit children
+        super.visitFunctionDeclaration(ctx);
+
+        //return returnType
+        return new DataType(ctx.returntype.getText());
+    }
+
+    @Override
+    public DataType visitFunctionPara(DomboParser.FunctionParaContext ctx) {
+        DataType dataType = new DataType(ctx.dataType.getText());
+
+        //declare new variable
+        scopes.peek().declareVariable(ctx.name.getText(), dataType);
+
+        //return dataType
+        return dataType;
     }
 
     @Override

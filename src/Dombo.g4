@@ -58,7 +58,10 @@ whileLoop       : 'while' '(' conditon=logicExpression ')' block                
 forLoop         : 'for' '(' varDec ';' condition=logicExpression ';' varDec ')' block                                               #For
                 ;
 
-functionDec     : 'function' returntype=(RETURNTYPE | DATATYPE) name=ID '(' ((parameters=DATATYPE ID ',')* (parameters=DATATYPE ID))? ')' functionBlock  #FunctionDeclaration
+functionDec     : 'function' returntype=(RETURNTYPE | DATATYPE) name=ID '(' ((functionParameter ',')* (functionParameter))? ')' functionBlock  #FunctionDeclaration
+                ;
+
+functionParameter: dataType=DATATYPE name=ID                                                                                           #functionPara
                 ;
 
 functionCall    : 'do' ID '(' ((parameters=parameter ',')* (parameters=parameter))? ')'                                           #Function
