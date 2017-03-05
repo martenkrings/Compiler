@@ -212,6 +212,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitNotOp(DomboParser.NotOpContext ctx) {
+        //No type checking needed
         return super.visitNotOp(ctx);
     }
 
