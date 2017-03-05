@@ -39,7 +39,7 @@ public class Dombo {
             // Ask for expression
             System.out.print("Test> ");
 //            String line = s.nextLine();
-            String line = "START function int test(){\n    int a = 3 - false;\n    return a;\n}";
+            String line = "START function int test(){\n    int a = 3;\n boolean b = -false;\n int c = a + b;\n return a;\n}";
             if( line.equals("exit") )
                 break;
 

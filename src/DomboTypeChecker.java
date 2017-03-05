@@ -9,6 +9,28 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     private Stack<Scope> scopes;
 
+    public DataType lookUpVariableInScopes(String ctxId){
+        Scope searchingScope = scopes.peek();
+        Symbol foundSymbol;
+
+        while (true){
+            //if searching scope equals null then no matching id is found
+            if (searchingScope == null){
+                return null;
+            }
+
+            //search scope for the symbol
+            foundSymbol = searchingScope.lookUpVariable(ctxId);
+
+            //if no symbol is found try the next parent scope
+            if (foundSymbol == null){
+                searchingScope = searchingScope.getParentScope();
+            } else {
+               return (DataType) foundSymbol.type;
+            }
+        }
+    }
+
     @Override
     public DataType visitProgram(DomboParser.ProgramContext ctx) {
         scopes = new Stack<>();
@@ -85,14 +107,11 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         DataType leftDataType = visit(ctx.left);
         DataType rightDataType = visit(ctx.right);
 
-        System.out.println("left: " + leftDataType);
-        System.out.println("right: " + rightDataType);
-
         //compare types
         if (!leftDataType.getType().equalsIgnoreCase(rightDataType.getType())){
             //throw error if types missmatch
             try {
-                throw new TypeError(leftDataType + " and " + rightDataType + " type missmatch");
+                throw new TypeError(leftDataType.getType() + " and " + rightDataType.getType() + " type missmatch");
             } catch (TypeError typeError) {
                 typeError.printStackTrace();
             }
@@ -105,7 +124,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
     public DataType visitNegateOp(DomboParser.NegateOpContext ctx) {
         //Visit children
         DataType dataType = (DataType) super.visitNegateOp(ctx);
-        if (!dataType.getType().equals(DataTypeEnum.INT.toString())){
+        if (!dataType.getType().equalsIgnoreCase(DataTypeEnum.INT.toString())){
             try {
                 throw new TypeError("negate op only usable on INT variables");
             } catch (TypeError typeError) {
@@ -121,15 +140,15 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
     @Override
     public DataType visitMulOp(DomboParser.MulOpContext ctx) {
         //Get left and right dataTypes by visiting children
-        DataType leftDataType = (DataType) visit(ctx.left);
-        DataType rightDataType = (DataType) visit(ctx.right);
+        DataType leftDataType = visit(ctx.left);
+        DataType rightDataType = visit(ctx.right);
 
 
         //compare types
-        if (!leftDataType.getType().equals(rightDataType.getType())){
+        if (!leftDataType.getType().equalsIgnoreCase(rightDataType.getType())){
             //throw error if types missmatch
             try {
-                throw new TypeError(leftDataType + " and " + rightDataType + " type missmatch");
+                throw new TypeError(leftDataType.getType() + " and " + rightDataType.getType() + " type missmatch");
             } catch (TypeError typeError) {
                 typeError.printStackTrace();
             }
@@ -141,33 +160,17 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitIntVariable(DomboParser.IntVariableContext ctx) {
-        Scope searchingScope = scopes.peek();
-        Symbol foundSymbol = null;
-        boolean found = false;
-
-        while (!found){
-            //if searching scope equals null then no matching id is found
-            if (searchingScope == null){
-                try {
-                    throw new TypeError(ctx.ID().getText() + " not initialized");
-                } catch (TypeError typeError) {
-                    typeError.printStackTrace();
-                }
-            }
-
-            //search scope for the symbol
-            foundSymbol = searchingScope.lookUpVariable(ctx.ID().getText());
-
-            //if no symbol is found try the next parent scope
-            if (foundSymbol == null){
-                searchingScope = searchingScope.getParentScope();
-            } else {
-                found = true;
+        DataType found = lookUpVariableInScopes(ctx.ID().getText());
+        if (found == null){
+            try {
+                throw new TypeError(ctx.ID().getText() + " not initialised");
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
             }
         }
 
         //return the type of the found variable
-        return (DataType) foundSymbol.type;
+        return found;
     }
 
     @Override
@@ -194,7 +197,17 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitBoolVariable(DomboParser.BoolVariableContext ctx) {
-        return super.visitBoolVariable(ctx);
+        DataType found = lookUpVariableInScopes(ctx.ID().getText());
+        if (found == null){
+            try {
+                throw new TypeError(ctx.ID().getText() + " not initialised");
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
+            }
+        }
+
+        //return the type of the found variable
+        return found;
     }
 
     @Override
@@ -249,7 +262,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitReadCommand(DomboParser.ReadCommandContext ctx) {
-        return super.visitReadCommand(ctx);
+        return new DataType(DataTypeEnum.STRING);
     }
 
     @Override
