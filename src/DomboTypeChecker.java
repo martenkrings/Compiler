@@ -1,5 +1,6 @@
 import org.antlr.v4.runtime.tree.ParseTree;
 
+import javax.xml.crypto.Data;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
@@ -8,16 +9,21 @@ import java.util.Stack;
  * Created by Marten on 2/28/2017.
  */
 public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
-
     private Stack<Scope> scopes;
 
-    public DataType lookUpVariableInScopes(String ctxId){
+    /**
+     * Finds a variable or method accessible from current scope
+     *
+     * @param ctxId name of variable
+     * @return Type if found else null
+     */
+    public Type lookUpVariableInScopes(String ctxId) {
         Scope searchingScope = scopes.peek();
         Symbol foundSymbol;
 
-        while (true){
+        while (true) {
             //if searching scope equals null then no matching id is found
-            if (searchingScope == null){
+            if (searchingScope == null) {
                 return null;
             }
 
@@ -25,18 +31,26 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
             foundSymbol = searchingScope.lookUpVariable(ctxId);
 
             //if no symbol is found try the next parent scope
-            if (foundSymbol == null){
+            if (foundSymbol == null) {
                 searchingScope = searchingScope.getParentScope();
             } else {
-               return (DataType) foundSymbol.type;
+                return foundSymbol.type;
             }
         }
     }
 
     @Override
     public DataType visitProgram(DomboParser.ProgramContext ctx) {
+        //start up
         scopes = new Stack<>();
         scopes.add(new Scope());
+
+        //visit function declarations first
+        for (int i = 0; i < ctx.statement().size(); i++) {
+            visit(ctx.statement().get(i).functionDec());
+        }
+
+        //return 'something'
         return super.visitProgram(ctx);
     }
 
@@ -60,7 +74,6 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
                 } catch (TypeError typeError) {
                     typeError.printStackTrace();
                 }
-
             }
         }
 
@@ -81,20 +94,24 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
     }
 
 
-
     @Override
     public DataType visitScope(DomboParser.ScopeContext ctx) {
         //Make a new scope and add it to the stack
         scopes.add(new Scope(scopes.peek()));
 
+        //find all functions in this scope
+        for (int i = 0; i < ctx.statement().size(); i++) {
+            visit(ctx.statement().get(i).functionDec());
+        }
+
         //Visit children
-        DataType returnValue = super.visitScope(ctx);
+        super.visitScope(ctx);
 
         //close scope
         scopes.pop();
 
-        //return
-        return returnValue;
+        //return null, scope is typeLess
+        return null;
     }
 
     @Override
@@ -110,7 +127,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         DataType rightDataType = visit(ctx.right);
 
         //compare types
-        if (!leftDataType.getType().equalsIgnoreCase(rightDataType.getType())){
+        if (!leftDataType.getType().equalsIgnoreCase(rightDataType.getType())) {
             //throw error if types missmatch
             try {
                 throw new TypeError(leftDataType.getType() + " and " + rightDataType.getType() + " type missmatch");
@@ -126,7 +143,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
     public DataType visitNegateOp(DomboParser.NegateOpContext ctx) {
         //Visit children
         DataType dataType = (DataType) super.visitNegateOp(ctx);
-        if (!dataType.getType().equalsIgnoreCase(DataTypeEnum.INT.toString())){
+        if (!dataType.getType().equalsIgnoreCase(DataTypeEnum.INT.toString())) {
             try {
                 throw new TypeError("negate op only usable on INT variables");
             } catch (TypeError typeError) {
@@ -145,16 +162,14 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         DataType leftDataType = visit(ctx.left);
         DataType rightDataType = visit(ctx.right);
 
-
         //compare types
-        if (!leftDataType.getType().equalsIgnoreCase(rightDataType.getType())){
+        if (!leftDataType.getType().equalsIgnoreCase(rightDataType.getType())) {
             //throw error if types missmatch
             try {
                 throw new TypeError(leftDataType.getType() + " and " + rightDataType.getType() + " type missmatch");
             } catch (TypeError typeError) {
                 typeError.printStackTrace();
             }
-
         }
 
         return leftDataType;
@@ -162,8 +177,8 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitIntVariable(DomboParser.IntVariableContext ctx) {
-        DataType found = lookUpVariableInScopes(ctx.ID().getText());
-        if (found == null){
+        Type found = lookUpVariableInScopes(ctx.ID().getText());
+        if (found == null) {
             try {
                 throw new TypeError(ctx.ID().getText() + " not initialised");
             } catch (TypeError typeError) {
@@ -171,8 +186,13 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
             }
         }
 
+        //if its a method return the return type
+        if (found instanceof MethodType) {
+            return ((MethodType) found).getReturnType();
+        }
+
         //return the type of the found variable
-        return found;
+        return (DataType) found;
     }
 
     @Override
@@ -199,8 +219,8 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitBoolVariable(DomboParser.BoolVariableContext ctx) {
-        DataType found = lookUpVariableInScopes(ctx.ID().getText());
-        if (found == null){
+        DataType found = (DataType) lookUpVariableInScopes(ctx.ID().getText());
+        if (found == null) {
             try {
                 throw new TypeError(ctx.ID().getText() + " not initialised");
             } catch (TypeError typeError) {
@@ -220,26 +240,31 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitIfSingleStatement(DomboParser.IfSingleStatementContext ctx) {
+        //No type checking needed
         return super.visitIfSingleStatement(ctx);
     }
 
     @Override
     public DataType visitIfElseStatement(DomboParser.IfElseStatementContext ctx) {
+        //No type checking needed
         return super.visitIfElseStatement(ctx);
     }
 
     @Override
     public DataType visitIfElseIfStatement(DomboParser.IfElseIfStatementContext ctx) {
+        //No type checking needed
         return super.visitIfElseIfStatement(ctx);
     }
 
     @Override
     public DataType visitWhile(DomboParser.WhileContext ctx) {
+        //No type checking needed
         return super.visitWhile(ctx);
     }
 
     @Override
     public DataType visitFor(DomboParser.ForContext ctx) {
+        //No type checking needed
         return super.visitFor(ctx);
     }
 
@@ -249,18 +274,31 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         };
 
         //add dataTypes of parameters
-        for (int i = 0; i < ctx.functionParameter().size(); i++){
+        for (int i = 0; i < ctx.functionParameter().size(); i++) {
             dataTypes.add(visit(ctx.functionParameter().get(i)));
         }
 
         //declare new method
         scopes.peek().declareMethod(ctx.name.getText(), new DataType(ctx.returntype.getText()), dataTypes);
 
+        //Get return types
+        DataType returnedDataType = visit(ctx.functionBlock());
+        DataType methodReturnType = new DataType(ctx.returntype.getText());
+
+        //If return types don't match throw a TypeError
+        if (!returnedDataType.getType().equalsIgnoreCase(methodReturnType.getType())) {
+            try {
+                throw new TypeError("Incorrect return type, expected " + methodReturnType.getType() + " got " + returnedDataType.getType());
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
+            }
+        }
+
         //visit children
         super.visitFunctionDeclaration(ctx);
 
         //return returnType
-        return new DataType(ctx.returntype.getText());
+        return methodReturnType;
     }
 
     @Override
@@ -276,7 +314,60 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitFunction(DomboParser.FunctionContext ctx) {
-        return super.visitFunction(ctx);
+        //visit function
+        MethodType methodType = (MethodType) lookUpVariableInScopes(ctx.name.getText());
+
+        //Collect parameter Datatypes
+        DataType[] dataTypes = new DataType[ctx.parameter().size()];
+        for (int i = 0; i < ctx.parameter().size(); i++) {
+            dataTypes[i] = visit(ctx.parameter().get(i));
+        }
+
+        boolean goodInput = true;
+
+        //check if datTypes given match required parameters of method
+        if (dataTypes.length != methodType.getParameters().size()) {
+            goodInput = false;
+        } else {
+            for (int i = 0; i < methodType.getParameters().size(); i++) {
+                if (!methodType.getParameters().get(i).getType().equalsIgnoreCase(dataTypes[i].getType())) {
+                    goodInput = false;
+                }
+            }
+        }
+
+        //If parameter types don't match throw a TypeError
+        if (!goodInput) {
+            try {
+                //Readable error formatting
+                String expected = "(";
+                for (int i = 0; i < methodType.getParameters().size(); i++) {
+                    expected += methodType.getParameters().get(i).getType();
+                    if (methodType.getParameters().size() - 1 != i) {
+                        expected += ", ";
+                    }
+                }
+                expected += ")";
+
+                String got = "(";
+                for (int i = 0; i < dataTypes.length; i++) {
+                    got += dataTypes[i].getType();
+                    if (dataTypes.length - 1 != i) {
+                        got += ", ";
+                    }
+                }
+
+                got += ")";
+
+                //Throw new error
+                throw new TypeError("Expected: " + expected + " got " + got);
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
+            }
+        }
+
+        //return return DataType
+        return methodType.getReturnType();
     }
 
     @Override
@@ -301,11 +392,34 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitFunctionScope(DomboParser.FunctionScopeContext ctx) {
-        return super.visitFunctionScope(ctx);
+        //make a new scope
+        scopes.add(new Scope(scopes.peek()));
+
+        //find all functions in this scope
+        for (int i = 0; i < ctx.statement().size(); i++) {
+            //In case of empty scope
+            if (ctx.statement().get(i).functionDec() != null) {
+                visit(ctx.statement().get(i).functionDec());
+            }
+        }
+
+        DataType returnDataType = visit(ctx.returnStatement());
+
+        //visit children
+        super.visitFunctionScope(ctx);
+
+        //remove scope from stack
+        scopes.pop();
+
+        return returnDataType;
     }
 
     @Override
     public DataType visitReturnCommand(DomboParser.ReturnCommandContext ctx) {
-        return super.visitReturnCommand(ctx);
+        //get return DataType
+        DataType dataType = visit(ctx.returned);
+
+        //return dataType
+        return dataType;
     }
 }

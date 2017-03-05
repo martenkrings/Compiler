@@ -12,7 +12,11 @@ public class MethodType extends Type {
         this.parameters = parameters;
     }
 
-    public void addParameter(DataType dataType) {
-        parameters.add(dataType);
+    public List<DataType> getParameters() {
+        return parameters;
+    }
+
+    public DataType getReturnType() {
+        return returnType;
     }
 }

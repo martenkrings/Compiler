@@ -61,10 +61,10 @@ forLoop         : 'for' '(' varDec ';' condition=logicExpression ';' varDec ')' 
 functionDec     : 'function' returntype=(RETURNTYPE | DATATYPE) name=ID '(' ((functionParameter ',')* (functionParameter))? ')' functionBlock  #FunctionDeclaration
                 ;
 
-functionParameter: dataType=DATATYPE name=ID                                                                                           #functionPara
+functionParameter: dataType=DATATYPE name=ID                                                                                           #FunctionPara
                 ;
 
-functionCall    : 'do' ID '(' ((parameters=parameter ',')* (parameters=parameter))? ')'                                           #Function
+functionCall    : 'do' name=ID '(' ((parameters=parameter ',')* (parameters=parameter))? ')'                                           #Function
                 ;
 
 globalVarDec    : 'global' varDec                                                       #GlobalDec
@@ -76,7 +76,7 @@ printStatement  : 'print' expression                                            
 readStatement   : 'readLine'                                                            #ReadCommand
                 ;
 
-returnStatement : 'return' expression ';'                                               #ReturnCommand
+returnStatement : 'return' returned=expression ';'                                               #ReturnCommand
                 ;
 
 parameter       : ID
