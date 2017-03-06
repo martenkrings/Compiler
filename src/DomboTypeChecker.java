@@ -443,6 +443,68 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
     }
 
     @Override
+    public DataType visitStringAddOp(DomboParser.StringAddOpContext ctx) {
+        DataType dataTypeLeft = visit(ctx.left);
+        DataType dataTypeRight = visit(ctx.right);
+
+        //If neither of dataTypes is a String throw TypeError
+        if (!compareDataTypes(dataTypeLeft, DataTypeEnum.STRING.toString()) && !compareDataTypes(dataTypeRight, DataTypeEnum.STRING.toString())){
+            try {
+                throw new TypeError("No string variable found");
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
+            }
+        }
+
+        super.visitStringAddOp(ctx);
+
+        //Return new String DataType
+        return new DataType(DataTypeEnum.STRING);
+    }
+
+    @Override
+    public DataType visitStringWithExpression(DomboParser.StringWithExpressionContext ctx) {
+        //visit children
+        super.visitStringWithExpression(ctx);
+
+        //return new String DataType
+        return new DataType(DataTypeEnum.STRING);
+    }
+
+    @Override
+    public DataType visitStringVariable(DomboParser.StringVariableContext ctx) {
+        //search the variable
+        Type found = lookUpVariableInScopes(ctx.ID().getText());
+        if (found == null) {
+            try {
+                throw new TypeError(ctx.ID().getText() + " not initialised");
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
+            }
+        }
+
+        //if its a method return the return type
+        if (found instanceof MethodType) {
+            return ((MethodType) found).getReturnType();
+        }
+
+        //return the type of the found variable
+        return (DataType) found;
+    }
+
+    @Override
+    public DataType visitStringValue(DomboParser.StringValueContext ctx) {
+        //return new String DataType
+        return new DataType(DataTypeEnum.STRING);
+    }
+
+    @Override
+    public DataType visitStringReadStatement(DomboParser.StringReadStatementContext ctx) {
+        //visit children
+        return super.visitStringReadStatement(ctx);
+    }
+
+    @Override
     public DataType visitReadCommand(DomboParser.ReadCommandContext ctx) {
         //return String dataType
         return new DataType(DataTypeEnum.STRING);

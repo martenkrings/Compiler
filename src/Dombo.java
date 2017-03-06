@@ -35,19 +35,21 @@ public class Dombo {
     public static void main(String[] args) {
         Scanner s = new Scanner(System.in);
 
-        while( true ) {
+//        while( true ) {
             // Ask for expression
             System.out.print("Test> ");
 //            String line = s.nextLine();
             String line = "START function int test(int test1, boolean test2, int test3){\n function int functionInFunction(){boolean test = true == false;" +
-                    " return 1;}  int a = do halo(1, 2);\n int b = do a;\n boolean b1 = false; \n boolean b2 = true; \n boolean random = b1 < b2;\n return 2;}" +
-                    "\nfunction int halo(int b, int c){\n int shouldFails = do functionInFunction(); \nreturn 1;}\n ";
-            if( line.equals("exit") )
-                break;
+                    " return 1;}  int a = do halo(1, 2);\n boolean b1 = false; \n boolean b2 = true; \n boolean random = b1 < b2;\n return 2;}" +
+                    "\nfunction int halo(int b, int c){\n " +
+                    "String s1 = \"\"; \n String s2 = s1 + \" testString \" ; \n return 1;}\n ";
+            System.out.println(line);
+//            if( line.equals("exit") )
+//                break;
 
             // Eval
             System.out.println( "--> " + evaluate(line) );
-        }
+//        }
         System.out.println("KTHNXBYE");
     }
 }

@@ -26,11 +26,11 @@ block           : '{' statement* '}'                                            
 functionBlock   : '{' statement* returnStatement '}'
                 ;
 
-expression      : calcExpression
+expression      : stringExpression
+                | calcExpression
                 | logicExpression
                 | '(' expression ')'
                 | functionCall
-                | readStatement
                 ;
 
 calcExpression  : INT                                                               #IntValue
@@ -45,6 +45,13 @@ logicExpression : leftLogic=logicExpression op=('==' | '!=' | 'and' | 'or') righ
                 | ('!' | 'not') logicExpression                                                                 #NotOp
                 | BOOLEANVALUE                                                                                  #BoolValue
                 | ID                                                                                            #BoolVariable
+                ;
+
+stringExpression : STRINGVALUE                                                      #StringValue
+                | ID                                                                #StringVariable
+                | stringExpression '+' expression                                   #StringWithExpression
+                | readStatement                                                     #StringReadStatement
+                | left=stringExpression '+' right=stringExpression                  #StringAddOp
                 ;
 
 ifStatement     : 'if' '(' condition=logicExpression ')' block                          #IfSingleStatement
@@ -73,7 +80,7 @@ functionCall    : 'do' name=ID '(' ((parameters=parameter ',')* (parameters=para
 globalVarDec    : 'global' varDec                                                       #GlobalDec
                 ;
 
-printStatement  : 'print' expression                                                    #PrintCommand
+printStatement  : 'print' stringExpression                                              #PrintCommand
                 ;
 
 readStatement   : 'readLine'                                                            #ReadCommand
@@ -87,9 +94,10 @@ parameter       : ID
                 | logicExpression
                 ;
 
-DATATYPE        : 'int' | 'boolean';
+DATATYPE        : 'int' | 'boolean' | 'String';
 RETURNTYPE      : 'void';
 BOOLEANVALUE    : 'true' | 'false';
+STRINGVALUE     : '"' (ID| [ ])* '"';
 ID              : [A-Za-z] [A-Za-z0-9]*;
 INT             : '0' | [1-9][0-9]*;
 WS              : [\r\n\t\f ]+ -> skip ;
