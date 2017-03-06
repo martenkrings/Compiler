@@ -3,14 +3,15 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.util.Scanner;
+
 public class Dombo {
     /*
      * Evalute the entered line.
      * @param line  A line conforming to the grammar Calc.g4
      * @return      The evaluated value.
      */
-    private static Object evaluate( String line ) {
-        ANTLRInputStream inputStream = new ANTLRInputStream( line );
+    private static Object evaluate(String line) {
+        ANTLRInputStream inputStream = new ANTLRInputStream(line);
 
         // Create lexer and run scanner to create stream of tokens
         DomboLexer lexer = new DomboLexer(inputStream);
@@ -33,32 +34,27 @@ public class Dombo {
     public static void main(String[] args) {
         Scanner s = new Scanner(System.in);
 
-//        while( true ) {
-            // Ask for expression
-            System.out.print("Test> ");
-//            String line = s.nextLine();
-            String line = "int globalVar = 0;\n" +
-                    "START function int test(int test1, boolean test2, int test3){\n" +
-                    "    boolean t = true;" +
-                    "    function int functionInFunction(){\n" +
-                    "        boolean test = t == false; " +
-                    "        return 1;\n" +
-                    "    }\n" +
-                    "    int i = globalVar; \n" +
-                    "    String string = \"s2\";\n" +
-                    "    return 2;\n" +
-                    "}\n" +
-                    "function int halo(int b, int c){\n" +
-                    "    String s2 = \"teststring\" ; \n" +
-                    "    return 1;\n" +
-                    "}";
-            System.out.println(line);
-//            if( line.equals("exit") )
-//                break;
+        // Ask for expression
+        System.out.print("Test> ");
+        String line = "int globalVar = 0;\n" +
+                "START function int test(int test1, boolean test2, int test3){\n" +
+                "    boolean t = true;" +
+                "    function int functionInFunction(){\n" +
+                "        boolean test = t == false; " +
+                "        return 1;\n" +
+                "    }\n" +
+                "    int i = globalVar; \n" +
+                "    String string = \"s2\";\n" +
+                "    return 2;\n" +
+                "}\n" +
+                "function int halo(int b, int c){\n" +
+                "    String s2 = \"teststring\" ; \n" +
+                "    return 1;\n" +
+                "}";
+        System.out.println(line);
 
-            // Eval
-            System.out.println( "--> " + evaluate(line) );
-//        }
+        // Eval
+        System.out.println("--> " + evaluate(line));
         System.out.println("KTHNXBYE");
     }
 }
