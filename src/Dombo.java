@@ -23,8 +23,7 @@ public class Dombo {
         // Evaluate by running the visitor
         DomboTypeChecker evaluator = new DomboTypeChecker();
         DataType value = evaluator.visit(expression);
-
-        return value.getType();
+        return value;
     }
 
     /*
@@ -38,10 +37,21 @@ public class Dombo {
             // Ask for expression
             System.out.print("Test> ");
 //            String line = s.nextLine();
-            String line = "START function int test(int test1, boolean test2, int test3){\n function int functionInFunction(){boolean test = true == false;" +
-                    " return 1;}  int a = do halo(1, 2);\n boolean b1 = false; \n boolean b2 = true; \n boolean random = b1 < b2;\n return 2;}" +
-                    "\nfunction int halo(int b, int c){\n " +
-                    "String s1 = \"\"; \n String s2 = s1 + \" testString \" ; \n s2 = false; \n return 1;}\n ";
+            String line = "int globalVar = 0;\n" +
+                    "START function int test(int test1, boolean test2, int test3){\n" +
+                    "    boolean t = true;" +
+                    "    function int functionInFunction(){\n" +
+                    "        boolean test = t == false; " +
+                    "        return 1;\n" +
+                    "    }\n" +
+                    "    int i = globalVar; \n" +
+                    "    String string = \"s2\";\n" +
+                    "    return 2;\n" +
+                    "}\n" +
+                    "function int halo(int b, int c){\n" +
+                    "    String s2 = \"teststring\" ; \n" +
+                    "    return 1;\n" +
+                    "}";
             System.out.println(line);
 //            if( line.equals("exit") )
 //                break;

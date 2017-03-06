@@ -14,7 +14,6 @@ statement       : varDec ';'
                 | readStatement ';'
                 | functionCall ';'
                 | variableAssign ';'
-                | 'null;'
                 ;
 
 varDec          : DATATYPE ID '=' value=expression                                  #VarDeclaration
@@ -27,11 +26,11 @@ block           : '{' statement* '}'                                            
 functionBlock   : '{' statement* returnStatement '}'
                 ;
 
-expression      : stringExpression
-                | calcExpression
+expression      : calcExpression
                 | logicExpression
                 | '(' expression ')'
                 | functionCall
+                | stringExpression
                 ;
 
 variableAssign: name=ID '=' value=expression;
@@ -43,11 +42,11 @@ calcExpression  : INT                                                           
                 | left=calcExpression op=('+' | '-') right=calcExpression           #AddOp
                 ;
 
-logicExpression : leftLogic=logicExpression op=('==' | '!=' | 'and' | 'or') rightLogic=logicExpression          #LogicComparator
+logicExpression : BOOLEANVALUE                                                                                  #BoolValue
+                | ID                                                                                            #BoolVariable
+                | leftLogic=logicExpression op=('==' | '!=' | 'and' | 'or') rightLogic=logicExpression          #LogicComparator
                 | leftCalc=calcExpression op=('<' | '>' | '>=' | '<=' | '==' | '!=') rightCalc=calcExpression   #CalcComparator
                 | ('!' | 'not') logicExpression                                                                 #NotOp
-                | BOOLEANVALUE                                                                                  #BoolValue
-                | ID                                                                                            #BoolVariable
                 ;
 
 stringExpression : STRINGVALUE                                                      #StringValue
@@ -65,7 +64,7 @@ ifStatement     : 'if' '(' condition=logicExpression ')' block                  
 whileLoop       : 'while' '(' condition=logicExpression ')' block                                                                    #While
                 ;
 
-forLoop         : 'for' '(' vardec=varDec ';' condition=logicExpression ';' varDec ')' block                                               #For
+forLoop         : 'for' '(' vardec=varDec ';' condition=logicExpression ';' variableAssign ')' block                                               #For
                 ;
 
 functionDec     : 'function' returntype=(RETURNTYPE | DATATYPE) name=ID functionTotal  #FunctionDeclaration
@@ -100,7 +99,7 @@ parameter       : ID
 DATATYPE        : 'int' | 'boolean' | 'String';
 RETURNTYPE      : 'void';
 BOOLEANVALUE    : 'true' | 'false';
-STRINGVALUE     : '"' (ID| [ ])* '"';
+STRINGVALUE     : '"' ([A-Za-z0-9]| [ ])* '"';
 ID              : [A-Za-z] [A-Za-z0-9]*;
 INT             : '0' | [1-9][0-9]*;
 WS              : [\r\n\t\f ]+ -> skip ;
