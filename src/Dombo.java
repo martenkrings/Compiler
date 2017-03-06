@@ -39,7 +39,9 @@ public class Dombo {
             // Ask for expression
             System.out.print("Test> ");
 //            String line = s.nextLine();
-            String line = "START function int test(int test1, boolean test2, int test3){\n function int functionInFunction(){boolean test = true == afga; return 1;}  int a = do halo(1, 2);\n int b = do functionInFunction();\n return 2;}\nfunction int halo(int b, int c){return 1;}\n ";
+            String line = "START function int test(int test1, boolean test2, int test3){\n function int functionInFunction(){boolean test = true == false;" +
+                    " return 1;}  int a = do halo(1, 2);\n int b = do a;\n boolean b1 = false; \n boolean b2 = true; \n boolean random = b1 < b2;\n return 2;}" +
+                    "\nfunction int halo(int b, int c){\n int shouldFails = do functionInFunction(); \nreturn 1;}\n ";
             if( line.equals("exit") )
                 break;
 

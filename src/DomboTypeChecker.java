@@ -39,6 +39,16 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         }
     }
 
+    /**
+     * Compares 2 dataTypes
+     * @param d1 first dataType to compare
+     * @param d2 second dataType(String) to compare
+     * @return true if of same type else false
+     */
+    public boolean compareDataTypes(DataType d1, String d2){
+        return d1.getType().equalsIgnoreCase(d2);
+    }
+
     @Override
     public DataType visitProgram(DomboParser.ProgramContext ctx) {
         //start up
@@ -68,7 +78,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
         //Compare declared and actual dataType
         if (actualDataType != null) {
-            if (!actualDataType.getType().equalsIgnoreCase(datatype)) {
+            if (!compareDataTypes(actualDataType, datatype)) {
                 try {
                     throw new TypeError(datatype + " and " + actualDataType.getType() + " type mismatch");
                 } catch (TypeError typeError) {
@@ -126,8 +136,17 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         DataType leftDataType = visit(ctx.left);
         DataType rightDataType = visit(ctx.right);
 
+        //Check if mul operator is being applied to a boolean if so throw new TypeError
+        if (compareDataTypes(leftDataType, DataTypeEnum.BOOLEAN.toString()) | compareDataTypes(rightDataType, DataTypeEnum.BOOLEAN.toString())){
+            try {
+                throw new TypeError(DataTypeEnum.BOOLEAN.toString() + " not compatible with AddOp");
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
+            }
+        }
+
         //compare types
-        if (!leftDataType.getType().equalsIgnoreCase(rightDataType.getType())) {
+        if (!compareDataTypes(leftDataType, rightDataType.getType())) {
             //throw error if types missmatch
             try {
                 throw new TypeError(leftDataType.getType() + " and " + rightDataType.getType() + " type missmatch");
@@ -142,8 +161,8 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
     @Override
     public DataType visitNegateOp(DomboParser.NegateOpContext ctx) {
         //Visit children
-        DataType dataType = (DataType) super.visitNegateOp(ctx);
-        if (!dataType.getType().equalsIgnoreCase(DataTypeEnum.INT.toString())) {
+        DataType dataType = super.visitNegateOp(ctx);
+        if (!compareDataTypes(dataType, DataTypeEnum.INT.toString())) {
             try {
                 throw new TypeError("negate op only usable on INT variables");
             } catch (TypeError typeError) {
@@ -162,8 +181,17 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         DataType leftDataType = visit(ctx.left);
         DataType rightDataType = visit(ctx.right);
 
+        //Check if mul operator is being applied to a boolean if so throw new TypeError
+        if (compareDataTypes(leftDataType, DataTypeEnum.BOOLEAN.toString()) | compareDataTypes(rightDataType, DataTypeEnum.BOOLEAN.toString())){
+            try {
+                throw new TypeError(DataTypeEnum.BOOLEAN.toString() + " not compatible with MulOperator");
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
+            }
+        }
+
         //compare types
-        if (!leftDataType.getType().equalsIgnoreCase(rightDataType.getType())) {
+        if (!compareDataTypes(leftDataType, rightDataType.getType())) {
             //throw error if types missmatch
             try {
                 throw new TypeError(leftDataType.getType() + " and " + rightDataType.getType() + " type missmatch");
@@ -277,7 +305,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         DataType methodReturnType = new DataType(ctx.returntype.getText());
 
         //If return types don't match throw a TypeError
-        if (!returnedDataType.getType().equalsIgnoreCase(methodReturnType.getType())) {
+        if (!compareDataTypes(returnedDataType, methodReturnType.getType())) {
             try {
                 throw new TypeError("Incorrect return type, expected " + methodReturnType.getType() + " got " + returnedDataType.getType());
             } catch (TypeError typeError) {
@@ -330,8 +358,23 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitFunction(DomboParser.FunctionContext ctx) {
-        //visit function
-        MethodType methodType = (MethodType) lookUpVariableInScopes(ctx.name.getText());
+        //loop up function
+        Type type = lookUpVariableInScopes(ctx.name.getText());
+
+        //If method is not defined or not a function throw new typeError
+        if (type == null | !(type instanceof MethodType)){
+            try {
+                throw new TypeError("Method " + ctx.name.getText() + " not defined");
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
+            } finally {
+                //see if we can typecheck further
+                return null;
+            }
+        }
+
+        //Cast type to methidType
+        MethodType methodType = (MethodType) type;
 
         //Collect parameter Datatypes
         DataType[] dataTypes = new DataType[ctx.parameter().size()];
@@ -388,21 +431,26 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitGlobalDec(DomboParser.GlobalDecContext ctx) {
+
         return super.visitGlobalDec(ctx);
     }
 
     @Override
     public DataType visitPrintCommand(DomboParser.PrintCommandContext ctx) {
+        //TODO is typechecking needed here?
+        //Do nothing
         return super.visitPrintCommand(ctx);
     }
 
     @Override
     public DataType visitReadCommand(DomboParser.ReadCommandContext ctx) {
+        //return String dataType
         return new DataType(DataTypeEnum.STRING);
     }
 
     @Override
     public DataType visitParameter(DomboParser.ParameterContext ctx) {
+        //visit children
         return super.visitParameter(ctx);
     }
 
@@ -424,6 +472,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         //visit children
         super.visitFunctionBlock(ctx);
 
+        //return return dataType
         return returnDataType;
     }
 
