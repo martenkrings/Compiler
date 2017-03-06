@@ -3,7 +3,6 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.util.Scanner;
-
 public class Dombo {
     /*
      * Evalute the entered line.
@@ -42,7 +41,7 @@ public class Dombo {
             String line = "START function int test(int test1, boolean test2, int test3){\n function int functionInFunction(){boolean test = true == false;" +
                     " return 1;}  int a = do halo(1, 2);\n boolean b1 = false; \n boolean b2 = true; \n boolean random = b1 < b2;\n return 2;}" +
                     "\nfunction int halo(int b, int c){\n " +
-                    "String s1 = \"\"; \n String s2 = s1 + \" testString \" ; \n return 1;}\n ";
+                    "String s1 = \"\"; \n String s2 = s1 + \" testString \" ; \n s2 = false; \n return 1;}\n ";
             System.out.println(line);
 //            if( line.equals("exit") )
 //                break;

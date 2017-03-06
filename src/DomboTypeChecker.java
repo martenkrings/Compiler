@@ -65,6 +65,40 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
     }
 
     @Override
+    public DataType visitVariableAssign(DomboParser.VariableAssignContext ctx) {
+        //Look up DataTypes
+        Type variableType = lookUpVariableInScopes(ctx.name.getText());
+        DataType valueDataType = visit(ctx.value);
+
+        //If varaible not found throw new TypeError
+        if (variableType == null | !(variableType instanceof DataType)){
+            try {
+                throw new TypeError(ctx.name.getText() + " not initialised");
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
+            } finally {
+                //try to typeCheck more
+                return null;
+            }
+        }
+
+        //Cast variableType
+        DataType variableDataType = (DataType) variableType;
+
+        //Compare types, if types do not compare throw new TypeError
+        if (!compareDataTypes(variableDataType, valueDataType.getType())){
+            try {
+                throw new TypeError("Expected: " + variableDataType.getType() + " got " + valueDataType.getType());
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
+            }
+        }
+
+        //Return variableDataType
+        return variableDataType;
+    }
+
+    @Override
     public DataType visitStatement(DomboParser.StatementContext ctx) {
         //Visit children
         return super.visitStatement(ctx);
@@ -123,6 +157,8 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         //return null, scope is typeLess
         return null;
     }
+
+
 
     @Override
     public DataType visitExpression(DomboParser.ExpressionContext ctx) {
@@ -270,31 +306,74 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitIfSingleStatement(DomboParser.IfSingleStatementContext ctx) {
-        //No type checking needed
+        //Get condition DataType
+        DataType dataType = visit(ctx.condition);
+
+        //Check if conditionDataType is of boolean type is not throw new TypeError
+        if(!compareDataTypes(dataType, DataTypeEnum.BOOLEAN.toString())){
+            try {
+                throw new TypeError("Expected " + DataTypeEnum.BOOLEAN + " for if condition got " + dataType.getType());
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
+            }
+        }
+
         return super.visitIfSingleStatement(ctx);
     }
 
     @Override
     public DataType visitIfElseStatement(DomboParser.IfElseStatementContext ctx) {
-        //No type checking needed
+        //Get condition DataType
+        DataType dataType = visit(ctx.condition);
+
+        //Check if conditionDataType is of boolean type is not throw new TypeError
+        if(!compareDataTypes(dataType, DataTypeEnum.BOOLEAN.toString())){
+            try {
+                throw new TypeError("Expected " + DataTypeEnum.BOOLEAN + " for if condition got " + dataType.getType());
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
+            }
+        }
+
         return super.visitIfElseStatement(ctx);
     }
 
     @Override
     public DataType visitIfElseIfStatement(DomboParser.IfElseIfStatementContext ctx) {
-        //No type checking needed
+        //Get condition DataType
+        DataType dataType = visit(ctx.condition);
+
+        //Check if conditionDataType is of boolean type is not throw new TypeError
+        if(!compareDataTypes(dataType, DataTypeEnum.BOOLEAN.toString())){
+            try {
+                throw new TypeError("Expected " + DataTypeEnum.BOOLEAN + " for if condition got " + dataType.getType());
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
+            }
+        }
+
         return super.visitIfElseIfStatement(ctx);
     }
 
     @Override
     public DataType visitWhile(DomboParser.WhileContext ctx) {
-        //No type checking needed
+        //Get condition DataType
+        DataType dataType = visit(ctx.condition);
+
+        //Check if conditionDataType is of boolean type is not throw new TypeError
+        if(!compareDataTypes(dataType, DataTypeEnum.BOOLEAN.toString())){
+            try {
+                throw new TypeError("Expected " + DataTypeEnum.BOOLEAN + " for while condition got " + dataType.getType());
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
+            }
+        }
         return super.visitWhile(ctx);
     }
 
     @Override
     public DataType visitFor(DomboParser.ForContext ctx) {
-        //No type checking needed
+        //TODO: chheck for loops
         return super.visitFor(ctx);
     }
 

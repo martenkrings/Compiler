@@ -13,6 +13,7 @@ statement       : varDec ';'
                 | printStatement ';'
                 | readStatement ';'
                 | functionCall ';'
+                | variableAssign ';'
                 | 'null;'
                 ;
 
@@ -32,6 +33,8 @@ expression      : stringExpression
                 | '(' expression ')'
                 | functionCall
                 ;
+
+variableAssign: name=ID '=' value=expression;
 
 calcExpression  : INT                                                               #IntValue
                 | ID                                                                #IntVariable
@@ -59,10 +62,10 @@ ifStatement     : 'if' '(' condition=logicExpression ')' block                  
                 | 'if' '(' condition=logicExpression ')' block 'else' ifStatement       #IfElseIfStatement
                 ;
 
-whileLoop       : 'while' '(' conditon=logicExpression ')' block                                                                    #While
+whileLoop       : 'while' '(' condition=logicExpression ')' block                                                                    #While
                 ;
 
-forLoop         : 'for' '(' varDec ';' condition=logicExpression ';' varDec ')' block                                               #For
+forLoop         : 'for' '(' vardec=varDec ';' condition=logicExpression ';' varDec ')' block                                               #For
                 ;
 
 functionDec     : 'function' returntype=(RETURNTYPE | DATATYPE) name=ID functionTotal  #FunctionDeclaration
