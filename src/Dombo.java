@@ -1,6 +1,7 @@
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.ParseTreeProperty;
 
 import java.util.Scanner;
 
@@ -37,19 +38,17 @@ public class Dombo {
         // Ask for expression
         System.out.print("Test> ");
         String line = "int globalVar = 0;\n" +
-                "START function int test(int test1, boolean test2, int test3){\n" +
-                "    boolean t = true;" +
-                "    function int functionInFunction(){\n" +
-                "        boolean test = t == false; " +
-                "        return 1;\n" +
+                "START function void main(){\n" +
+                "    boolean t = true;    function int functionInFunction(){\n" +
+                "        boolean test = t == false;         return 1;\n" +
                 "    }\n" +
                 "    int i = globalVar; \n" +
                 "    String string = \"s2\";\n" +
-                "    return 2;\n" +
+                "    return void;\n" +
                 "}\n" +
-                "function int halo(int b, int c){\n" +
-                "    String s2 = \"teststring\" ; \n" +
-                "    return 1;\n" +
+                "function void halo(String b, int c){\n" +
+                "    String s2 = \"teststring\" + b ; \n" +
+                "    return void;\n" +
                 "}";
         System.out.println(line);
 

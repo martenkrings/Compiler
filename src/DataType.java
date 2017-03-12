@@ -15,6 +15,8 @@ public class DataType extends Type{
             this.type = DataTypeEnum.BOOLEAN;
         } else if (type.equalsIgnoreCase("string")){
             this.type = DataTypeEnum.STRING;
+        } else if (type.equalsIgnoreCase("void")){
+            this.type = DataTypeEnum.VOID;
         }
     }
 

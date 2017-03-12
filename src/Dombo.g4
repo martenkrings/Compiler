@@ -1,6 +1,9 @@
 grammar Dombo;
 
-program         : statement* 'START' functionDec statement*
+program         : statement* startFunctionDec statement*
+                ;
+
+startFunctionDec: 'START function void main()' '{' statement* 'return void;' '}'
                 ;
 
 statement       : varDec ';'
@@ -67,7 +70,7 @@ whileLoop       : 'while' '(' condition=logicExpression ')' block               
 forLoop         : 'for' '(' vardec=varDec ';' condition=logicExpression ';' variableAssign ')' block                                               #For
                 ;
 
-functionDec     : 'function' returntype=(RETURNTYPE | DATATYPE) name=ID functionTotal  #FunctionDeclaration
+functionDec     : 'function' returntype=(RETURNTYPE | DATATYPE) name=ID functionTotal   #FunctionDeclaration
                 ;
 
 functionTotal   : '(' ((functionParameter ',')* (functionParameter))? ')' functionBlock
@@ -88,7 +91,8 @@ printStatement  : 'print' stringExpression                                      
 readStatement   : 'readLine'                                                            #ReadCommand
                 ;
 
-returnStatement : 'return' returned=expression ';'                                               #ReturnCommand
+returnStatement : 'return'expression ';'                                                #ReturnCommand
+                | 'return void;'                                                        #ReturnVoidCommand
                 ;
 
 parameter       : ID

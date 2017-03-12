@@ -1,4 +1,5 @@
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.ParseTreeProperty;
 
 import javax.xml.crypto.Data;
 import java.util.ArrayList;
@@ -10,6 +11,7 @@ import java.util.Stack;
  */
 public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
     private Stack<Scope> scopes;
+    private ParseTreeProperty parseTreeProperty = new ParseTreeProperty();
 
     /**
      * Finds a variable or method accessible from current scope
@@ -41,7 +43,6 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     /**
      * Compares 2 dataTypes
-     *
      * @param d1 first dataType to compare
      * @param d2 second dataType(String) to compare
      * @return true if of same type else false
@@ -70,10 +71,28 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         }
 
         //visit the START function
-        visit(ctx.functionDec());
+        visit(ctx.startFunctionDec());
 
         //return 'something'
-        return super.visitProgram(ctx);
+        return null;
+    }
+
+    @Override
+    public DataType visitStartFunctionDec(DomboParser.StartFunctionDecContext ctx) {
+        //Declare new method
+        scopes.peek().declareMethod("Main", new DataType(DataTypeEnum.VOID), new ArrayList<>());
+
+        //add scope
+        scopes.add(new Scope(scopes.peek()));
+
+        //visit children
+        DataType dataType =  super.visitStartFunctionDec(ctx);
+
+        //remove scope
+        scopes.pop();
+
+        //return datatype
+        return dataType;
     }
 
     @Override
@@ -445,7 +464,8 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         scopes.add(new Scope(scopes.peek()));
 
         //Get return types
-        DataType returnedDataType = visit(ctx.functionTotal().functionBlock());
+
+        DataType returnedDataType = visit(ctx.functionTotal());
         DataType methodReturnType = new DataType(ctx.returntype.getText());
 
         //Remove dummy scope
@@ -473,7 +493,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         scopes.peek().declareMethod(ctx.name.getText(), new DataType(ctx.returntype.getText()), dataTypes);
 
         //visit children
-        super.visitFunctionDeclaration(ctx);
+        visit(ctx.functionTotal());
 
         //return returnType
         return methodReturnType;
@@ -484,11 +504,17 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         //make a new scope
         scopes.add(new Scope(scopes.peek()));
 
-        //visit children
-        DataType dataType = super.visitFunctionTotal(ctx);
+        //visit parameters first
+        for (int i =0; i < ctx.functionParameter().size(); i++){
+            visit(ctx.functionParameter(i));
+        }
+
+        //visit function block
+        DataType dataType = visit(ctx.functionBlock());
 
         scopes.pop();
 
+        //return something
         return dataType;
     }
 
@@ -496,6 +522,9 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
     public DataType visitFunctionPara(DomboParser.FunctionParaContext ctx) {
         //get dataType
         DataType dataType = new DataType(ctx.dataType.getText());
+
+        //declare parameter
+        scopes.peek().declareVariable(ctx.name.getText(), new DataType(ctx.dataType.getText()));
 
         //return dataType
         return dataType;
@@ -513,15 +542,15 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
             } catch (TypeError typeError) {
                 typeError.printStackTrace();
             } finally {
-                //see if we can typecheck further
+                //see if we can typeCheck further
                 return null;
             }
         }
 
-        //Cast type to methidType
+        //Cast type to methodType
         MethodType methodType = (MethodType) type;
 
-        //Collect parameter Datatypes
+        //Collect parameter DataTypes
         DataType[] dataTypes = new DataType[ctx.parameter().size()];
         for (int i = 0; i < ctx.parameter().size(); i++) {
             dataTypes[i] = visit(ctx.parameter().get(i));
@@ -685,9 +714,14 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
     @Override
     public DataType visitReturnCommand(DomboParser.ReturnCommandContext ctx) {
         //get return DataType
-        DataType dataType = visit(ctx.returned);
+        DataType dataType = visit(ctx.expression());
 
         //return dataType
         return dataType;
+    }
+
+    @Override
+    public DataType visitReturnVoidCommand(DomboParser.ReturnVoidCommandContext ctx) {
+        return new DataType(DataTypeEnum.VOID);
     }
 }
