@@ -3,6 +3,8 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 
+import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Scanner;
 
 public class Dombo {
@@ -12,7 +14,7 @@ public class Dombo {
      * @param line  A line conforming to the grammar Calc.g4
      * @return      The evaluated value.
      */
-    private static Object evaluate(String line) {
+    private static ArrayList<String> evaluate(String line) {
         ANTLRInputStream inputStream = new ANTLRInputStream(line);
 
         // Create lexer and run scanner to create stream of tokens
@@ -25,7 +27,11 @@ public class Dombo {
 
         // Evaluate by running the visitor
         DomboTypeChecker evaluator = new DomboTypeChecker();
-        DataType value = evaluator.visit(expression);
+        evaluator.visit(expression);
+
+        // Generate bytecode
+        JasminGenerator jasminGenerator = new JasminGenerator();
+        ArrayList<String> value = jasminGenerator.visit(expression);
         return value;
     }
 
@@ -66,8 +72,16 @@ public class Dombo {
                 "}";
         System.out.println(line);
 
-        // Eval
-        System.out.println("--> " + evaluate(line));
+        System.out.println("--> ");
+
+        //Print byteCodeResult
+        ArrayList<String> byteCode = evaluate(line);
+        for (int i = 0; i < byteCode.size(); i++){
+            System.out.println(byteCode.get(i));
+        }
+
+
+
         System.out.println("KTHNXBYE");
     }
 }

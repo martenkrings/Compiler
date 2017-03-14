@@ -34,6 +34,8 @@ public class JasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 //        //visit functionDec
 //        code.addAll(visit(ctx.functionDec()));
 
+        code.addAll(super.visitProgram(ctx));
+
         return code;
     }
 
