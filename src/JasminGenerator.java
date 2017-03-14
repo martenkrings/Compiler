@@ -224,9 +224,4 @@ public class JasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
     public ArrayList<String> visitReturnCommand(DomboParser.ReturnCommandContext ctx) {
         return super.visitReturnCommand(ctx);
     }
-
-    @Override
-    public ArrayList<String> visitParameter(DomboParser.ParameterContext ctx) {
-        return super.visitParameter(ctx);
-    }
 }

@@ -1,6 +1,5 @@
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Stack;
 
 /**
@@ -8,6 +7,7 @@ import java.util.Stack;
  */
 public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
     private Stack<Scope> scopes;
+    private boolean definingFunction = true;
 
     /**
      * Finds a variable or method accessible from current scope
@@ -19,12 +19,8 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         Scope searchingScope = scopes.peek();
         Symbol foundSymbol;
 
-        while (true) {
-            //if searching scope equals null then no matching id is found
-            if (searchingScope == null) {
-                return null;
-            }
-
+        //While we have scopes to search search
+        while (searchingScope != null) {
             //search scope for the symbol
             foundSymbol = searchingScope.lookUpVariable(ctxId);
 
@@ -35,6 +31,8 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
                 return foundSymbol.type;
             }
         }
+
+        return null;
     }
 
     /**
@@ -59,6 +57,9 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
                 visit(ctx.functionDec(i));
             }
         }
+
+        //we are no longer defining functions
+        definingFunction = false;
 
         //visit global var declarations
         for (int i = 0; i < ctx.statement().size(); i++){
@@ -111,9 +112,6 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
                 throw new TypeError(ctx.name.getText() + " not initialised. At line: " + ctx.start.getLine());
             } catch (TypeError typeError) {
                 typeError.printStackTrace();
-            } finally {
-                //return 'something'
-                return null;
             }
         }
 
@@ -467,31 +465,45 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitFunctionDeclaration(DomboParser.FunctionDeclarationContext ctx) {
-        //Make new Scope
-        scopes.add(new Scope(scopes.peek(), new DataType(ctx.returntype.getText())));
+        //If we're defining function in the scope that add this method to the scope
+        if (definingFunction){
+            //Make list to store parameters
+            ArrayList<DataType> dataTypes = new ArrayList();
 
-        //Make list to store parameters
-        ArrayList<DataType> dataTypes = new ArrayList();
+            //add dataTypes of parameters
+            for (int i = 0; i < ctx.functionParameter().size(); i++) {
+                dataTypes.add(visit(ctx.functionParameter().get(i)));
+            }
 
-        //add dataTypes of parameters
-        for (int i = 0; i < ctx.functionParameter().size(); i++) {
-            dataTypes.add(visit(ctx.functionParameter().get(i)));
+            //declare new method in scope
+            scopes.peek().declareMethod(ctx.name.getText(), new DataType(ctx.returntype.getText()), dataTypes);
+
+            //Add new method to parseTreeProperty
+            Dombo.parseTreeProperty.put(ctx, new Method(ctx.name.getText(), new MethodType(new DataType(ctx.returntype.getText()), dataTypes)));
+
+            //else visit all children in a new scope
+        }else {
+
+            //Make new Scope
+            scopes.add(new Scope(scopes.peek(), new DataType(ctx.returntype.getText())));
+
+            //Make list to store parameters
+            ArrayList<DataType> dataTypes = new ArrayList();
+
+            //add dataTypes of parameters
+            for (int i = 0; i < ctx.functionParameter().size(); i++) {
+                dataTypes.add(visit(ctx.functionParameter().get(i)));
+            }
+
+            //visit children
+            for (int i = 0; i < ctx.statement().size(); i++) {
+                visit(ctx.statement(i));
+            }
+            visit(ctx.returnStatement());
+
+            //remove Scope
+            scopes.pop();
         }
-
-        //declare new method in scope above this methods scope
-        scopes.peek().getParentScope().declareMethod(ctx.name.getText(), new DataType(ctx.returntype.getText()), dataTypes);
-
-        //Add new method to parseTreeProperty
-        Dombo.parseTreeProperty.put(ctx, new Method(ctx.name.getText(), new MethodType(new DataType(ctx.returntype.getText()), dataTypes)));
-
-        //visit children
-        for (int i = 0; i < ctx.statement().size(); i++){
-            visit(ctx.statement(i));
-        }
-        visit(ctx.returnStatement());
-
-        //remove Scope
-        scopes.pop();
 
         //return 'something'
         return null;
@@ -502,8 +514,11 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         //get dataType
         DataType dataType = new DataType(ctx.dataType.getText());
 
-        //declare parameter
-        scopes.peek().declareVariable(ctx.name.getText(), new DataType(ctx.dataType.getText()));
+        //don't declare a new parameter in current scope if we're only defining the method
+        if (!definingFunction) {
+            //declare parameter
+            scopes.peek().declareVariable(ctx.name.getText(), new DataType(ctx.dataType.getText()));
+        }
 
         //return dataType
         return dataType;
@@ -527,19 +542,19 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         MethodType methodType = (MethodType) type;
 
         //Collect parameter DataTypes
-        DataType[] dataTypes = new DataType[ctx.parameter().size()];
+        ArrayList<DataType> dataTypes = new ArrayList<>();
         for (int i = 0; i < ctx.parameter().size(); i++) {
-            dataTypes[i] = visit(ctx.parameter().get(i));
+            dataTypes.add(visit(ctx.parameter().get(i)));
         }
 
         boolean goodInput = true;
 
         //check if datTypes given match required parameters of method
-        if (dataTypes.length != methodType.getParameters().size()) {
+        if (dataTypes.size() != methodType.getParameters().size()) {
             goodInput = false;
         } else {
             for (int i = 0; i < methodType.getParameters().size(); i++) {
-                if (!methodType.getParameters().get(i).getType().equalsIgnoreCase(dataTypes[i].getType())) {
+                if (!methodType.getParameters().get(i).getType().equalsIgnoreCase(dataTypes.get(i).getType())) {
                     goodInput = false;
                 }
             }
@@ -559,9 +574,9 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
                 expected += ")";
 
                 String got = "(";
-                for (int i = 0; i < dataTypes.length; i++) {
-                    got += dataTypes[i].getType();
-                    if (dataTypes.length - 1 != i) {
+                for (int i = 0; i < dataTypes.size(); i++) {
+                    got += dataTypes.get(i).getType();
+                    if (dataTypes.size() - 1 != i) {
                         got += ", ";
                     }
                 }
@@ -577,6 +592,23 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
         //return return DataType
         return methodType.getReturnType();
+    }
+
+    @Override
+    public DataType visitStringParameter(DomboParser.StringParameterContext ctx) {
+        return new DataType(DataTypeEnum.STRING);
+    }
+
+    @Override
+    public DataType visitCalcParameter(DomboParser.CalcParameterContext ctx) {
+        //visit children
+        return super.visitCalcParameter(ctx);
+    }
+
+    @Override
+    public DataType visitLogicParameter(DomboParser.LogicParameterContext ctx) {
+        //visit children
+        return super.visitLogicParameter(ctx);
     }
 
     @Override
@@ -651,12 +683,6 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
     public DataType visitReadCommand(DomboParser.ReadCommandContext ctx) {
         //return String dataType
         return new DataType(DataTypeEnum.STRING);
-    }
-
-    @Override
-    public DataType visitParameter(DomboParser.ParameterContext ctx) {
-        //visit children
-        return super.visitParameter(ctx);
     }
 
     @Override

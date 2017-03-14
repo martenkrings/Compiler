@@ -39,12 +39,14 @@ public class Dombo {
         // Ask for expression
         System.out.print("Test> ");
         String line = "int globalVar = 0;\n" +
-                "if(true){ \n" +
-                "   int vergeetMij = 1; \n" +
-                "} \n" +
                 "\n" +
-                "function int functionOutOfFunction(){\n" +
-                "        return 1;\n" +
+                "if ( false ) { \n" +
+                "    int i = 0;\n" +
+                "    }\n" +
+                "\n" +
+                "function int functionInFunction(){\n" +
+                "        boolean test = false == false;\n" +
+                "        return do halo(\"test\", 2);\n" +
                 "}    \n" +
                 "\n" +
                 "START function void main(){\n" +
@@ -58,9 +60,9 @@ public class Dombo {
                 "    return void;\n" +
                 "}\n" +
                 "\n" +
-                "function void halo(String b, int c){\n" +
+                "function int halo(String b, int c){\n" +
                 "    String s2 = \"teststring\" + b ; \n" +
-                "    return void;\n" +
+                "    return 1;\n" +
                 "}";
         System.out.println(line);
 

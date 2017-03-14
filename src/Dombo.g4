@@ -84,9 +84,9 @@ returnStatement : 'return'expression ';'                                        
                 | 'return void;'                                                        #ReturnVoidCommand
                 ;
 
-parameter       : ID
-                | calcExpression
-                | logicExpression
+parameter       : STRINGVALUE                                                           #StringParameter
+                | calcExpression                                                        #CalcParameter
+                | logicExpression                                                       #LogicParameter
                 ;
 
 DATATYPE        : 'int' | 'boolean' | 'String';
