@@ -21,6 +21,12 @@ public class Scope {
         this.symbolTable = new HashMap<>();
     }
 
+    public Scope(Scope parentScope, DataType dataType){
+        this.parentScope = parentScope;
+        this.symbolTable = new HashMap<>();
+        symbolTable.put("RETURN", new Symbol("RETURN", dataType));
+    }
+
     public Symbol declareVariable(String identifier, DataType dataType) {
         Symbol s = new Symbol(identifier, dataType);
 

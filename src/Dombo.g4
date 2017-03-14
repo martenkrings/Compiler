@@ -1,32 +1,27 @@
 grammar Dombo;
 
-program         : statement* startFunctionDec statement*
+program         : (statement | functionDec)* startFunctionDec (statement | functionDec)*
                 ;
 
 startFunctionDec: 'START function void main()' '{' statement* 'return void;' '}'
                 ;
 
 statement       : varDec ';'
-                | block
                 | ifStatement
                 | whileLoop
                 | forLoop
-                | functionDec
-                | globalVarDec ';'
                 | printStatement ';'
                 | readStatement ';'
                 | functionCall ';'
                 | variableAssign ';'
+                | block
                 ;
 
 varDec          : DATATYPE ID '=' value=expression                                  #VarDeclaration
                 | DATATYPE ID                                                       #GenericVarDeclaration
                 ;
 
-block           : '{' statement* '}'                                                #Scope
-                ;
-
-functionBlock   : '{' statement* returnStatement '}'
+block           : '{' statement* returnStatement? '}'                               #Scope
                 ;
 
 expression      : calcExpression
@@ -70,19 +65,13 @@ whileLoop       : 'while' '(' condition=logicExpression ')' block               
 forLoop         : 'for' '(' vardec=varDec ';' condition=logicExpression ';' variableAssign ')' block                                               #For
                 ;
 
-functionDec     : 'function' returntype=(RETURNTYPE | DATATYPE) name=ID functionTotal   #FunctionDeclaration
-                ;
-
-functionTotal   : '(' ((functionParameter ',')* (functionParameter))? ')' functionBlock
+functionDec     : 'function' returntype=(RETURNTYPE | DATATYPE) name=ID '(' ((functionParameter ',')* (functionParameter))? ')' '{' statement* returnStatement '}'   #FunctionDeclaration
                 ;
 
 functionParameter: dataType=DATATYPE name=ID                                                                                           #FunctionPara
                 ;
 
 functionCall    : 'do' name=ID '(' ((parameters=parameter ',')* (parameters=parameter))? ')'                                           #Function
-                ;
-
-globalVarDec    : 'global' varDec                                                       #GlobalDec
                 ;
 
 printStatement  : 'print' stringExpression                                              #PrintCommand

@@ -1,7 +1,4 @@
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.ParseTreeProperty;
 
-import javax.xml.crypto.Data;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
@@ -11,7 +8,6 @@ import java.util.Stack;
  */
 public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
     private Stack<Scope> scopes;
-    private ParseTreeProperty parseTreeProperty = new ParseTreeProperty();
 
     /**
      * Finds a variable or method accessible from current scope
@@ -57,13 +53,15 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         scopes = new Stack<>();
         scopes.add(new Scope());
 
-        //visit function and var declarations first
-        for (int i = 0; i < ctx.statement().size(); i++) {
-            DomboParser.FunctionDecContext functionDecContext = ctx.statement().get(i).functionDec();
-            if (functionDecContext != null) {
-                visit(functionDecContext);
+        //visit functions
+        for (int i = 0; i < ctx.functionDec().size(); i++) {
+            if (ctx.functionDec().get(i) != null) {
+                visit(ctx.functionDec(i));
             }
+        }
 
+        //visit global var declarations
+        for (int i = 0; i < ctx.statement().size(); i++){
             DomboParser.VarDecContext varDecContext = ctx.statement().get(i).varDec();
             if (varDecContext != null) {
                 visit(ctx.statement().get(i).varDec());
@@ -72,6 +70,9 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
         //visit the START function
         visit(ctx.startFunctionDec());
+
+        //Visit the rest, note it does not matter that above functions get visited twice, they will simply be overridden
+        super.visitProgram(ctx);
 
         //return 'something'
         return null;
@@ -82,8 +83,11 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         //Declare new method
         scopes.peek().declareMethod("Main", new DataType(DataTypeEnum.VOID), new ArrayList<>());
 
+        //Add to parseTreeProperty
+        Dombo.parseTreeProperty.put(ctx, new Method("Main", new MethodType(new DataType(DataTypeEnum.VOID), new ArrayList<>())));
+
         //add scope
-        scopes.add(new Scope(scopes.peek()));
+        scopes.add(new Scope(scopes.peek(), new DataType(DataTypeEnum.VOID)));
 
         //visit children
         DataType dataType =  super.visitStartFunctionDec(ctx);
@@ -108,7 +112,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
             } catch (TypeError typeError) {
                 typeError.printStackTrace();
             } finally {
-                //try to typeCheck more
+                //return 'something'
                 return null;
             }
         }
@@ -154,8 +158,13 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
         //Add variable
         scopes.peek().declareVariable(ctx.ID().getText(), actualDataType);
+
+        //Add variable to parseTreeProperty
+        Dombo.parseTreeProperty.put(ctx, new Variable(ctx.ID().getText(), actualDataType));
+
         super.visitVarDeclaration(ctx);
 
+        //return DataType
         return actualDataType;
     }
 
@@ -163,6 +172,9 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
     public DataType visitGenericVarDeclaration(DomboParser.GenericVarDeclarationContext ctx) {
         //Add a new variable to the current scope
         scopes.peek().declareVariable(ctx.ID().getText(), new DataType(ctx.DATATYPE().getText()));
+
+        //Add variable to parseTreeProperty
+        Dombo.parseTreeProperty.put(ctx, new Variable(ctx.ID().getText(), new DataType(ctx.DATATYPE().getText())));
 
         //Visit children
         return super.visitGenericVarDeclaration(ctx);
@@ -173,11 +185,6 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
     public DataType visitScope(DomboParser.ScopeContext ctx) {
         //Make a new scope and add it to the stack
         scopes.add(new Scope(scopes.peek()));
-
-        //find all functions in this scope
-        for (int i = 0; i < ctx.statement().size(); i++) {
-            visit(ctx.statement().get(i).functionDec());
-        }
 
         //Visit children
         super.visitScope(ctx);
@@ -213,7 +220,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
         //compare types
         if (!compareDataTypes(leftDataType, rightDataType.getType())) {
-            //throw error if types missmatch
+            //throw error if types mismatch
             try {
                 throw new TypeError(leftDataType.getType() + " and " + rightDataType.getType() + " type mismatch. At line: " + ctx.start.getLine());
             } catch (TypeError typeError) {
@@ -460,62 +467,34 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitFunctionDeclaration(DomboParser.FunctionDeclarationContext ctx) {
-        //add a new dummy scope
-        scopes.add(new Scope(scopes.peek()));
+        //Make new Scope
+        scopes.add(new Scope(scopes.peek(), new DataType(ctx.returntype.getText())));
 
-        //Get return types
-
-        DataType returnedDataType = visit(ctx.functionTotal());
-        DataType methodReturnType = new DataType(ctx.returntype.getText());
-
-        //Remove dummy scope
-        scopes.pop();
-
-        //If return types don't match throw a TypeError
-        if (!compareDataTypes(returnedDataType, methodReturnType.getType())) {
-            try {
-                throw new TypeError("Incorrect return type, expected " + methodReturnType.getType() + " got " + returnedDataType.getType() + ". At line: " + ctx.start.getLine());
-            } catch (TypeError typeError) {
-                typeError.printStackTrace();
-            }
-        }
-
-
-        List<DataType> dataTypes = new ArrayList<DataType>() {
-        };
+        //Make list to store parameters
+        ArrayList<DataType> dataTypes = new ArrayList();
 
         //add dataTypes of parameters
-        for (int i = 0; i < ctx.functionTotal().functionParameter().size(); i++) {
-            dataTypes.add(visit(ctx.functionTotal().functionParameter().get(i)));
+        for (int i = 0; i < ctx.functionParameter().size(); i++) {
+            dataTypes.add(visit(ctx.functionParameter().get(i)));
         }
 
-        //declare new method
-        scopes.peek().declareMethod(ctx.name.getText(), new DataType(ctx.returntype.getText()), dataTypes);
+        //declare new method in scope above this methods scope
+        scopes.peek().getParentScope().declareMethod(ctx.name.getText(), new DataType(ctx.returntype.getText()), dataTypes);
+
+        //Add new method to parseTreeProperty
+        Dombo.parseTreeProperty.put(ctx, new Method(ctx.name.getText(), new MethodType(new DataType(ctx.returntype.getText()), dataTypes)));
 
         //visit children
-        visit(ctx.functionTotal());
-
-        //return returnType
-        return methodReturnType;
-    }
-
-    @Override
-    public DataType visitFunctionTotal(DomboParser.FunctionTotalContext ctx) {
-        //make a new scope
-        scopes.add(new Scope(scopes.peek()));
-
-        //visit parameters first
-        for (int i =0; i < ctx.functionParameter().size(); i++){
-            visit(ctx.functionParameter(i));
+        for (int i = 0; i < ctx.statement().size(); i++){
+            visit(ctx.statement(i));
         }
+        visit(ctx.returnStatement());
 
-        //visit function block
-        DataType dataType = visit(ctx.functionBlock());
-
+        //remove Scope
         scopes.pop();
 
-        //return something
-        return dataType;
+        //return 'something'
+        return null;
     }
 
     @Override
@@ -541,9 +520,6 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
                 throw new TypeError("Method " + ctx.name.getText() + " not defined. At line: " + ctx.start.getLine());
             } catch (TypeError typeError) {
                 typeError.printStackTrace();
-            } finally {
-                //see if we can typeCheck further
-                return null;
             }
         }
 
@@ -601,12 +577,6 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
         //return return DataType
         return methodType.getReturnType();
-    }
-
-    @Override
-    public DataType visitGlobalDec(DomboParser.GlobalDecContext ctx) {
-
-        return super.visitGlobalDec(ctx);
     }
 
     @Override
@@ -690,31 +660,13 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
     }
 
     @Override
-    public DataType visitFunctionBlock(DomboParser.FunctionBlockContext ctx) {
-        //NOTE: new scope made in functionTotal
-
-        //find all functions in this scope
-        for (int i = 0; i < ctx.statement().size(); i++) {
-            //In case of empty scope
-            if (ctx.statement().get(i).functionDec() != null) {
-                visit(ctx.statement().get(i).functionDec());
-            }
-        }
-
-        //get return dataType
-        DataType returnDataType = visit(ctx.returnStatement());
-
-        //visit children
-        super.visitFunctionBlock(ctx);
-
-        //return return dataType
-        return returnDataType;
-    }
-
-    @Override
     public DataType visitReturnCommand(DomboParser.ReturnCommandContext ctx) {
         //get return DataType
         DataType dataType = visit(ctx.expression());
+
+        if (!checkReturnType(dataType, ctx.getStart().getLine())){
+            return null;
+        }
 
         //return dataType
         return dataType;
@@ -722,6 +674,44 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitReturnVoidCommand(DomboParser.ReturnVoidCommandContext ctx) {
-        return new DataType(DataTypeEnum.VOID);
+        DataType dataType = new DataType(DataTypeEnum.VOID);
+
+        if (!checkReturnType(dataType, ctx.getStart().getLine())){
+            return null;
+        }
+        return dataType;
+    }
+
+    public boolean checkReturnType(DataType dataType, int lineNumber){
+        Symbol symbol = null;
+
+        if (scopes.get(1).lookUpVariable("RETURN") != null){
+            symbol = scopes.get(1).lookUpVariable("RETURN");
+        }
+
+        //If return statement without method throw new TypeError
+        if (symbol == null){
+            try {
+                throw new TypeError("Return statement without method, At line: " + lineNumber);
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
+            }
+            return false;
+        }
+
+        DataType temp = (DataType) symbol.type;
+
+        //If returnType does not match with returning type throw new TypeError
+        if (!temp.getType().equalsIgnoreCase(dataType.getType())){
+            try {
+
+                throw new TypeError("Invalid return type, got: " + dataType.getType() + " expected: " + temp.getType() + "At line: " + lineNumber);
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
+            }
+            return false;
+        }
+
+        return true;
     }
 }

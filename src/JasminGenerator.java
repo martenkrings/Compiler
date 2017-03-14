@@ -38,12 +38,40 @@ public class JasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
     }
 
     @Override
+    public ArrayList<String> visitStartFunctionDec(DomboParser.StartFunctionDecContext ctx) {
+        ArrayList<String> code = new ArrayList<>();
+        //Add code for main method
+        code.add(
+        " ; Method definition for public static void main(String[] args)\n" +
+                " .method public static main([Ljava/lang/String;)V\n" +
+                " .limit stack 2 ; Size of the operand stack\n" +
+                " .limit locals 2 ; Number of parameters + locals\n");
+
+        //Add children code
+        code.addAll(super.visitStartFunctionDec(ctx));
+
+        //Add code for ending method
+        code.add(
+                " return\n" +
+                " .end method");
+
+        //Return build up code
+        return code;
+    }
+
+    @Override
+    public ArrayList<String> visitReturnVoidCommand(DomboParser.ReturnVoidCommandContext ctx) {
+        return super.visitReturnVoidCommand(ctx);
+    }
+
+    @Override
     public ArrayList<String> visitStatement(DomboParser.StatementContext ctx) {
         return super.visitStatement(ctx);
     }
 
     @Override
     public ArrayList<String> visitVarDeclaration(DomboParser.VarDeclarationContext ctx) {
+
         return super.visitVarDeclaration(ctx);
     }
 
@@ -55,11 +83,6 @@ public class JasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
     @Override
     public ArrayList<String> visitScope(DomboParser.ScopeContext ctx) {
         return super.visitScope(ctx);
-    }
-
-    @Override
-    public ArrayList<String> visitFunctionBlock(DomboParser.FunctionBlockContext ctx) {
-        return super.visitFunctionBlock(ctx);
     }
 
     @Override
@@ -178,11 +201,6 @@ public class JasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
     }
 
     @Override
-    public ArrayList<String> visitFunctionTotal(DomboParser.FunctionTotalContext ctx) {
-        return super.visitFunctionTotal(ctx);
-    }
-
-    @Override
     public ArrayList<String> visitFunctionPara(DomboParser.FunctionParaContext ctx) {
         return super.visitFunctionPara(ctx);
     }
@@ -190,11 +208,6 @@ public class JasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
     @Override
     public ArrayList<String> visitFunction(DomboParser.FunctionContext ctx) {
         return super.visitFunction(ctx);
-    }
-
-    @Override
-    public ArrayList<String> visitGlobalDec(DomboParser.GlobalDecContext ctx) {
-        return super.visitGlobalDec(ctx);
     }
 
     @Override

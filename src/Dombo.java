@@ -6,6 +6,7 @@ import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import java.util.Scanner;
 
 public class Dombo {
+    public static ParseTreeProperty parseTreeProperty = new ParseTreeProperty();
     /*
      * Evalute the entered line.
      * @param line  A line conforming to the grammar Calc.g4
@@ -38,14 +39,25 @@ public class Dombo {
         // Ask for expression
         System.out.print("Test> ");
         String line = "int globalVar = 0;\n" +
+                "if(true){ \n" +
+                "   int vergeetMij = 1; \n" +
+                "} \n" +
+                "\n" +
+                "function int functionOutOfFunction(){\n" +
+                "        return 1;\n" +
+                "}    \n" +
+                "\n" +
                 "START function void main(){\n" +
-                "    boolean t = true;    function int functionInFunction(){\n" +
-                "        boolean test = t == false;         return 1;\n" +
+                "    boolean t = true;\n" +
+                "   \n" +
+                "    if(true){\n" +
+                "       return void; \n" +
                 "    }\n" +
                 "    int i = globalVar; \n" +
                 "    String string = \"s2\";\n" +
                 "    return void;\n" +
                 "}\n" +
+                "\n" +
                 "function void halo(String b, int c){\n" +
                 "    String s2 = \"teststring\" + b ; \n" +
                 "    return void;\n" +
