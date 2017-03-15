@@ -143,6 +143,15 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         String datatype = ctx.DATATYPE().getText();
         DataType actualDataType = visit(ctx.value);
 
+        //var name is not allowed to be RETURN
+        if (ctx.ID().getText().equals("RETURN")){
+            try {
+                throw new TypeError("Variable name can not be RETURN");
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
+            }
+        }
+
         //Compare declared and actual dataType
         if (actualDataType != null) {
             if (!compareDataTypes(actualDataType, datatype)) {
@@ -180,15 +189,9 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
 
     @Override
-    public DataType visitScope(DomboParser.ScopeContext ctx) {
-        //Make a new scope and add it to the stack
-        scopes.add(new Scope(scopes.peek()));
-
+    public DataType visitBlock(DomboParser.BlockContext ctx) {
         //Visit children
-        super.visitScope(ctx);
-
-        //close scope
-        scopes.pop();
+        super.visitBlock(ctx);
 
         //return null, scope is typeLess
         return null;
@@ -371,6 +374,8 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitIfSingleStatement(DomboParser.IfSingleStatementContext ctx) {
+        scopes.add(new Scope(scopes.peek()));
+
         //Get condition DataType
         DataType dataType = visit(ctx.condition);
 
@@ -383,11 +388,20 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
             }
         }
 
-        return super.visitIfSingleStatement(ctx);
+        //visit children
+        super.visitIfSingleStatement(ctx);
+
+        //remove Scope
+        scopes.pop();
+
+        return null;
     }
 
     @Override
     public DataType visitIfElseStatement(DomboParser.IfElseStatementContext ctx) {
+        //add new Scope
+        scopes.add(new Scope(scopes.peek()));
+
         //Get condition DataType
         DataType dataType = visit(ctx.condition);
 
@@ -400,11 +414,30 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
             }
         }
 
-        return super.visitIfElseStatement(ctx);
+        //visit the first block
+        visit(ctx.block(0));
+
+        //remove Scope
+        scopes.pop();
+
+        //add new Scope
+        scopes.add(new Scope(scopes.peek()));
+
+        //visit the second block
+        visit(ctx.block(1));
+
+        //remove Scope
+        scopes.pop();
+
+        //return 'something'
+        return null;
     }
 
     @Override
     public DataType visitIfElseIfStatement(DomboParser.IfElseIfStatementContext ctx) {
+        //add new Scope
+        scopes.add(new Scope(scopes.peek()));
+
         //Get condition DataType
         DataType dataType = visit(ctx.condition);
 
@@ -417,11 +450,24 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
             }
         }
 
-        return super.visitIfElseIfStatement(ctx);
+        //visit the block first
+        visit(ctx.block());
+
+        //remove Scope
+        scopes.pop();
+
+        //visit new if statement(that will make its own new Scope)
+        visit(ctx.ifStatement());
+
+        //return something
+        return null;
     }
 
     @Override
     public DataType visitWhile(DomboParser.WhileContext ctx) {
+        //add new Scope
+        scopes.add(new Scope(scopes.peek()));
+
         //Get condition DataType
         DataType dataType = visit(ctx.condition);
 
@@ -433,11 +479,22 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
                 typeError.printStackTrace();
             }
         }
-        return super.visitWhile(ctx);
+
+        //visit children
+        super.visitWhile(ctx);
+
+        //remove Scope
+        scopes.pop();
+
+        //return 'something'
+        return null;
     }
 
     @Override
     public DataType visitFor(DomboParser.ForContext ctx) {
+        //declare new Scope
+        scopes.add(new Scope(scopes.peek()));
+
         //Get dataTypes
         DataType varDecDataType = visit(ctx.vardec);
         DataType conditionDataType = visit(ctx.condition);
@@ -460,7 +517,13 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
             }
         }
 
-        return super.visitFor(ctx);
+        super.visitFor(ctx);
+
+        //remove Scope
+        scopes.pop();
+
+        //return 'something'
+        return null;
     }
 
     @Override
@@ -619,6 +682,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitStringAddOp(DomboParser.StringAddOpContext ctx) {
+        //get dataTypes
         DataType dataTypeLeft = visit(ctx.left);
         DataType dataTypeRight = visit(ctx.right);
 
@@ -631,6 +695,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
             }
         }
 
+        //visit children
         super.visitStringAddOp(ctx);
 
         //Return new String DataType
@@ -711,6 +776,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
     public boolean checkReturnType(DataType dataType, int lineNumber){
         Symbol symbol = null;
 
+        //get the RETURN value
         if (scopes.get(1).lookUpVariable("RETURN") != null){
             symbol = scopes.get(1).lookUpVariable("RETURN");
         }
@@ -726,11 +792,9 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         }
 
         DataType temp = (DataType) symbol.type;
-
         //If returnType does not match with returning type throw new TypeError
         if (!temp.getType().equalsIgnoreCase(dataType.getType())){
             try {
-
                 throw new TypeError("Invalid return type, got: " + dataType.getType() + " expected: " + temp.getType() + "At line: " + lineNumber);
             } catch (TypeError typeError) {
                 typeError.printStackTrace();

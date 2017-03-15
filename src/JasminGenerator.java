@@ -83,8 +83,8 @@ public class JasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
     }
 
     @Override
-    public ArrayList<String> visitScope(DomboParser.ScopeContext ctx) {
-        return super.visitScope(ctx);
+    public ArrayList<String> visitBlock(DomboParser.BlockContext ctx) {
+        return super.visitBlock(ctx);
     }
 
     @Override
@@ -225,5 +225,20 @@ public class JasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
     @Override
     public ArrayList<String> visitReturnCommand(DomboParser.ReturnCommandContext ctx) {
         return super.visitReturnCommand(ctx);
+    }
+
+    @Override
+    public ArrayList<String> visitStringParameter(DomboParser.StringParameterContext ctx) {
+        return super.visitStringParameter(ctx);
+    }
+
+    @Override
+    public ArrayList<String> visitCalcParameter(DomboParser.CalcParameterContext ctx) {
+        return super.visitCalcParameter(ctx);
+    }
+
+    @Override
+    public ArrayList<String> visitLogicParameter(DomboParser.LogicParameterContext ctx) {
+        return super.visitLogicParameter(ctx);
     }
 }

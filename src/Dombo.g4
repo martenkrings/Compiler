@@ -14,14 +14,13 @@ statement       : varDec ';'
                 | readStatement ';'
                 | functionCall ';'
                 | variableAssign ';'
-                | block
                 ;
 
 varDec          : DATATYPE ID '=' value=expression                                  #VarDeclaration
                 | DATATYPE ID                                                       #GenericVarDeclaration
                 ;
 
-block           : '{' statement* returnStatement? '}'                               #Scope
+block           : '{' statement* returnStatement? '}'
                 ;
 
 expression      : calcExpression

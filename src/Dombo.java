@@ -68,6 +68,10 @@ public class Dombo {
                 "\n" +
                 "function int halo(String b, int c){\n" +
                 "    String s2 = \"teststring\" + b ; \n" +
+                "    for(int i = 0; i < 5; i = i+1){\n" +
+                "        String stringInFor = s2;\n" +
+                "    }\n" +
+                "    String RETURN = \"test\";\n" +
                 "    return 1;\n" +
                 "}";
         System.out.println(line);
