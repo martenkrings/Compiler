@@ -1,3 +1,5 @@
+package Model;
+
 import com.sun.istack.internal.Nullable;
 
 import java.util.HashMap;
@@ -5,7 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by Marten on 2/28/2017.
+ * Class that represents a scope
+ * Contains a map filled with Symbols
  */
 public class Scope {
     private Scope parentScope;

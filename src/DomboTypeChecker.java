@@ -1,4 +1,6 @@
 
+import Model.*;
+
 import java.util.ArrayList;
 import java.util.Stack;
 
@@ -13,7 +15,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
      * Finds a variable or method accessible from current scope
      *
      * @param ctxId name of variable
-     * @return Type if found else null
+     * @return Model.Type if found else null
      */
     public Type lookUpVariableInScopes(String ctxId) {
         Scope searchingScope = scopes.peek();
@@ -76,7 +78,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         super.visitProgram(ctx);
 
         //return 'something'
-        return null;
+        return new DataType("");
     }
 
     @Override
@@ -106,7 +108,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         Type variableType = lookUpVariableInScopes(ctx.name.getText());
         DataType valueDataType = visit(ctx.value);
 
-        //If varaible not found throw new TypeError
+        //If varaible not found throw new Model.TypeError
         if (variableType == null | !(variableType instanceof DataType)) {
             try {
                 throw new TypeError(ctx.name.getText() + " not initialised. At line: " + ctx.start.getLine());
@@ -118,7 +120,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         //Cast variableType
         DataType variableDataType = (DataType) variableType;
 
-        //Compare types, if types do not compare throw new TypeError
+        //Compare types, if types do not compare throw new Model.TypeError
         if (!compareDataTypes(variableDataType, valueDataType.getType())) {
             try {
                 throw new TypeError("Expected: " + variableDataType.getType() + " got " + valueDataType.getType() + ". At line: " + ctx.start.getLine());
@@ -146,7 +148,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         //var name is not allowed to be RETURN
         if (ctx.ID().getText().equals("RETURN")){
             try {
-                throw new TypeError("Variable name can not be RETURN");
+                throw new TypeError("Model.Variable name can not be RETURN");
             } catch (TypeError typeError) {
                 typeError.printStackTrace();
             }
@@ -171,7 +173,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
         super.visitVarDeclaration(ctx);
 
-        //return DataType
+        //return Model.DataType
         return actualDataType;
     }
 
@@ -186,7 +188,6 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         //Visit children
         return super.visitGenericVarDeclaration(ctx);
     }
-
 
     @Override
     public DataType visitBlock(DomboParser.BlockContext ctx) {
@@ -210,7 +211,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         DataType leftDataType = visit(ctx.left);
         DataType rightDataType = visit(ctx.right);
 
-        //Check if mul operator is being applied to a boolean if so throw new TypeError
+        //Check if mul operator is being applied to a boolean if so throw new Model.TypeError
         if (compareDataTypes(leftDataType, DataTypeEnum.BOOLEAN.toString()) | compareDataTypes(rightDataType, DataTypeEnum.BOOLEAN.toString())) {
             try {
                 throw new TypeError(DataTypeEnum.BOOLEAN.toString() + " not compatible with AddOp. At line: " + ctx.start.getLine());
@@ -255,7 +256,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         DataType leftDataType = visit(ctx.left);
         DataType rightDataType = visit(ctx.right);
 
-        //Check if mul operator is being applied to a boolean if so throw new TypeError
+        //Check if mul operator is being applied to a boolean if so throw new Model.TypeError
         if (compareDataTypes(leftDataType, DataTypeEnum.BOOLEAN.toString()) | compareDataTypes(rightDataType, DataTypeEnum.BOOLEAN.toString())) {
             try {
                 throw new TypeError(DataTypeEnum.BOOLEAN.toString() + " not compatible with MulOperator. At line: " + ctx.start.getLine());
@@ -299,7 +300,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitIntValue(DomboParser.IntValueContext ctx) {
-        //return DataType
+        //return Model.DataType
         return new DataType(DataTypeEnum.INT);
     }
 
@@ -309,7 +310,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         DataType leftDataType = visit(ctx.leftCalc);
         DataType rightDataType = visit(ctx.rightCalc);
 
-        //If dataType's are not INT throw a new TypeError
+        //If dataType's are not INT throw a new Model.TypeError
         if (!compareDataTypes(leftDataType, DataTypeEnum.INT.toString()) || !compareDataTypes(rightDataType, DataTypeEnum.INT.toString())) {
             try {
                 throw new TypeError("CaclComperator can not be used on " + leftDataType.getType() + " and " + rightDataType.getType() + ". At line: " + ctx.start.getLine());
@@ -320,13 +321,13 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
         super.visitCalcComparator(ctx);
 
-        //return boolean DataType
+        //return boolean Model.DataType
         return new DataType(DataTypeEnum.BOOLEAN);
     }
 
     @Override
     public DataType visitBoolValue(DomboParser.BoolValueContext ctx) {
-        //return DataType
+        //return Model.DataType
         return new DataType(DataTypeEnum.BOOLEAN);
     }
 
@@ -336,7 +337,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         DataType leftDataType = visit(ctx.leftLogic);
         DataType rightDataType = visit(ctx.rightLogic);
 
-        //If dataType's are not INT throw a new TypeError
+        //If dataType's are not INT throw a new Model.TypeError
         if (!compareDataTypes(leftDataType, DataTypeEnum.BOOLEAN.toString()) || !compareDataTypes(rightDataType, DataTypeEnum.BOOLEAN.toString())) {
             try {
                 throw new TypeError("LogicComparator can not be used on " + leftDataType.getType() + " and " + rightDataType.getType() + ". At line: " + ctx.start.getLine());
@@ -347,7 +348,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
         super.visitLogicComparator(ctx);
 
-        //return new DataType
+        //return new Model.DataType
         return leftDataType;
     }
 
@@ -376,10 +377,10 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
     public DataType visitIfSingleStatement(DomboParser.IfSingleStatementContext ctx) {
         scopes.add(new Scope(scopes.peek()));
 
-        //Get condition DataType
+        //Get condition Model.DataType
         DataType dataType = visit(ctx.condition);
 
-        //Check if conditionDataType is of boolean type is not throw new TypeError
+        //Check if conditionDataType is of boolean type is not throw new Model.TypeError
         if (!compareDataTypes(dataType, DataTypeEnum.BOOLEAN.toString())) {
             try {
                 throw new TypeError("Expected " + DataTypeEnum.BOOLEAN + " for if condition got " + dataType.getType() + ". At line: " + ctx.start.getLine());
@@ -391,7 +392,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         //visit children
         super.visitIfSingleStatement(ctx);
 
-        //remove Scope
+        //remove Model.Scope
         scopes.pop();
 
         return null;
@@ -399,13 +400,13 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitIfElseStatement(DomboParser.IfElseStatementContext ctx) {
-        //add new Scope
+        //add new Model.Scope
         scopes.add(new Scope(scopes.peek()));
 
-        //Get condition DataType
+        //Get condition Model.DataType
         DataType dataType = visit(ctx.condition);
 
-        //Check if conditionDataType is of boolean type is not throw new TypeError
+        //Check if conditionDataType is of boolean type is not throw new Model.TypeError
         if (!compareDataTypes(dataType, DataTypeEnum.BOOLEAN.toString())) {
             try {
                 throw new TypeError("Expected " + DataTypeEnum.BOOLEAN + " for if condition got " + dataType.getType() + ". At line: " + ctx.start.getLine());
@@ -417,16 +418,16 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         //visit the first block
         visit(ctx.block(0));
 
-        //remove Scope
+        //remove Model.Scope
         scopes.pop();
 
-        //add new Scope
+        //add new Model.Scope
         scopes.add(new Scope(scopes.peek()));
 
         //visit the second block
         visit(ctx.block(1));
 
-        //remove Scope
+        //remove Model.Scope
         scopes.pop();
 
         //return 'something'
@@ -435,13 +436,13 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitIfElseIfStatement(DomboParser.IfElseIfStatementContext ctx) {
-        //add new Scope
+        //add new Model.Scope
         scopes.add(new Scope(scopes.peek()));
 
-        //Get condition DataType
+        //Get condition Model.DataType
         DataType dataType = visit(ctx.condition);
 
-        //Check if conditionDataType is of boolean type is not throw new TypeError
+        //Check if conditionDataType is of boolean type is not throw new Model.TypeError
         if (!compareDataTypes(dataType, DataTypeEnum.BOOLEAN.toString())) {
             try {
                 throw new TypeError("Expected " + DataTypeEnum.BOOLEAN + " for if condition got " + dataType.getType() + ". At line: " + ctx.start.getLine());
@@ -453,10 +454,10 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         //visit the block first
         visit(ctx.block());
 
-        //remove Scope
+        //remove Model.Scope
         scopes.pop();
 
-        //visit new if statement(that will make its own new Scope)
+        //visit new if statement(that will make its own new Model.Scope)
         visit(ctx.ifStatement());
 
         //return something
@@ -465,13 +466,13 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitWhile(DomboParser.WhileContext ctx) {
-        //add new Scope
+        //add new Model.Scope
         scopes.add(new Scope(scopes.peek()));
 
-        //Get condition DataType
+        //Get condition Model.DataType
         DataType dataType = visit(ctx.condition);
 
-        //Check if conditionDataType is of boolean type is not throw new TypeError
+        //Check if conditionDataType is of boolean type is not throw new Model.TypeError
         if (!compareDataTypes(dataType, DataTypeEnum.BOOLEAN.toString())) {
             try {
                 throw new TypeError("Expected " + DataTypeEnum.BOOLEAN + " for while condition got " + dataType.getType() + ". At line: " + ctx.start.getLine());
@@ -483,7 +484,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         //visit children
         super.visitWhile(ctx);
 
-        //remove Scope
+        //remove Model.Scope
         scopes.pop();
 
         //return 'something'
@@ -492,7 +493,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitFor(DomboParser.ForContext ctx) {
-        //declare new Scope
+        //declare new Model.Scope
         scopes.add(new Scope(scopes.peek()));
 
         //Get dataTypes
@@ -519,7 +520,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
         super.visitFor(ctx);
 
-        //remove Scope
+        //remove Model.Scope
         scopes.pop();
 
         //return 'something'
@@ -547,7 +548,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
             //else visit all children in a new scope
         }else {
 
-            //Make new Scope
+            //Make new Model.Scope
             scopes.add(new Scope(scopes.peek(), new DataType(ctx.returntype.getText())));
 
             //Make list to store parameters
@@ -564,7 +565,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
             }
             visit(ctx.returnStatement());
 
-            //remove Scope
+            //remove Model.Scope
             scopes.pop();
         }
 
@@ -595,7 +596,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         //If method is not defined or not a function throw new typeError
         if (type == null | !(type instanceof MethodType)) {
             try {
-                throw new TypeError("Method " + ctx.name.getText() + " not defined. At line: " + ctx.start.getLine());
+                throw new TypeError("Model.Method " + ctx.name.getText() + " not defined. At line: " + ctx.start.getLine());
             } catch (TypeError typeError) {
                 typeError.printStackTrace();
             }
@@ -623,7 +624,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
             }
         }
 
-        //If parameter types don't match throw a TypeError
+        //If parameter types don't match throw a Model.TypeError
         if (!goodInput) {
             try {
                 //Readable error formatting
@@ -653,7 +654,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
             }
         }
 
-        //return return DataType
+        //return return Model.DataType
         return methodType.getReturnType();
     }
 
@@ -686,7 +687,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         DataType dataTypeLeft = visit(ctx.left);
         DataType dataTypeRight = visit(ctx.right);
 
-        //If neither of dataTypes is a String throw TypeError
+        //If neither of dataTypes is a String throw Model.TypeError
         if (!compareDataTypes(dataTypeLeft, DataTypeEnum.STRING.toString()) && !compareDataTypes(dataTypeRight, DataTypeEnum.STRING.toString())) {
             try {
                 throw new TypeError("No string variable found. At line: " + ctx.start.getLine());
@@ -698,7 +699,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         //visit children
         super.visitStringAddOp(ctx);
 
-        //Return new String DataType
+        //Return new String Model.DataType
         return new DataType(DataTypeEnum.STRING);
     }
 
@@ -707,7 +708,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         //visit children
         super.visitStringWithExpression(ctx);
 
-        //return new String DataType
+        //return new String Model.DataType
         return new DataType(DataTypeEnum.STRING);
     }
 
@@ -734,7 +735,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitStringValue(DomboParser.StringValueContext ctx) {
-        //return new String DataType
+        //return new String Model.DataType
         return new DataType(DataTypeEnum.STRING);
     }
 
@@ -752,7 +753,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitReturnCommand(DomboParser.ReturnCommandContext ctx) {
-        //get return DataType
+        //get return Model.DataType
         DataType dataType = visit(ctx.expression());
 
         if (!checkReturnType(dataType, ctx.getStart().getLine())){
@@ -781,7 +782,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
             symbol = scopes.get(1).lookUpVariable("RETURN");
         }
 
-        //If return statement without method throw new TypeError
+        //If return statement without method throw new Model.TypeError
         if (symbol == null){
             try {
                 throw new TypeError("Return statement without method, At line: " + lineNumber);
@@ -792,7 +793,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         }
 
         DataType temp = (DataType) symbol.type;
-        //If returnType does not match with returning type throw new TypeError
+        //If returnType does not match with returning type throw new Model.TypeError
         if (!temp.getType().equalsIgnoreCase(dataType.getType())){
             try {
                 throw new TypeError("Invalid return type, got: " + dataType.getType() + " expected: " + temp.getType() + "At line: " + lineNumber);

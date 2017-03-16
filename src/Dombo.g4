@@ -16,6 +16,8 @@ statement       : varDec ';'
                 | variableAssign ';'
                 ;
 
+
+
 varDec          : DATATYPE ID '=' value=expression                                  #VarDeclaration
                 | DATATYPE ID                                                       #GenericVarDeclaration
                 ;

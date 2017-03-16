@@ -1,5 +1,10 @@
+package Model;
+
+import Model.DataType;
+
 /**
- * Created by Sander on 13-3-2017.
+ * Class that represents a variable
+ * Used to 'remember' what a variable contains between different visitors
  */
 public class Variable {
     String identifier;
