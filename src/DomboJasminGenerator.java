@@ -276,6 +276,30 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
                 break;
         }
 
+        //increase lastLabelCreated for a new label
+        lastLabelCreated++;
+
+        //add where the code should jump to if true
+        code.add(" label" + lastLabelCreated + "\n");
+
+        //Code for if false
+        code.add("ldc 1\n");
+
+        //increase lastLabelCreated for a new label marking end of if statement
+        lastLabelCreated++;
+        code.add("goto label" + lastLabelCreated + "\n");
+
+        int prevLabel = lastLabelCreated - 1;
+
+        //Add true label
+        code.add("label" + prevLabel + ":\n");
+
+        //When true
+        code.add("ldc 0\n");
+
+        //Add end of if label
+        code.add("label" + lastLabelCreated + ":\n");
+
         return code;
     }
 
@@ -361,14 +385,17 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //init ArrayList
         ArrayList<String> code = new ArrayList<>();
 
-        //increase lastLabelCreated for a new label
-        lastLabelCreated++;
-
         //get condition
         code.addAll(visit(ctx.condition));
 
-        //add where the code should jump to if true
-        code.add(" label" + lastLabelCreated + "\n");
+        //add true boolean
+        code.add("ldc 0\n");
+
+        //increase lastLabelCreated for a new label
+        lastLabelCreated++;
+
+        //add if statement
+        code.add("if_icmpeq label" + lastLabelCreated + "\n");
 
         //increase lastLabelCreated for a new label marking end of if statement
         lastLabelCreated++;
@@ -381,7 +408,6 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
         //visit true block
         code.addAll(visit(ctx.block()));
-//        code.add("{XxxX}\n");
 
         //Add end of if label
         code.add("label" + lastLabelCreated + ":\n");

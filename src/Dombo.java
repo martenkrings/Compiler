@@ -46,11 +46,12 @@ public class Dombo {
         // Ask for expression
         System.out.print("Test> ");
         String line = "START function void main(){\n" +
-                "    String test = \"1 is groter dan 5\";\n" +
-                "    if(1 < 5){\n" +
-                "        test = \"1 is inderdaad kleiner dan 5\";\n" +
+                "    String s = \"5 is groter dan 3\";\n" +
+                "    if(5 < 3){\n" +
+                "        s = \"5 is kleiner dan 3\";\n" +
                 "    }\n" +
-                "    print test;\n" +
+                "     \n" +
+                "    print s;\n" +
                 "    return void;\n" +
                 "}";
         System.out.println(line);
