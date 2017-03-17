@@ -46,10 +46,11 @@ public class Dombo {
         // Ask for expression
         System.out.print("Test> ");
         String line = "START function void main(){\n" +
-                "    String s = \"Nummer \";\n" +
-                "    int i = 5;\n" +
-                "    s = s + 5;\n" +
-                "    print s;\n" +
+                "    int i = 0;\n" +
+                "         while(i < 10){\n" +
+                "         i = i + 1;\n" +
+                "         print \"haha\";\n" +
+                "         }" +
                 "    return void;\n" +
                 "}";
         System.out.println(line);

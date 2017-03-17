@@ -202,7 +202,32 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     @Override
     public ArrayList<String> visitAddOp(DomboParser.AddOpContext ctx) {
-        return super.visitAddOp(ctx);
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+        //get lefts code
+        code.addAll(visit(ctx.left));
+
+        //get rights code
+        code.addAll(visit(ctx.right));
+
+        //add code for used operator
+        switch (ctx.op.getText()){
+            case "+":
+                code.add("iadd\n");
+                break;
+            case "-":
+                code.add("isub\n");
+                break;
+
+            //We should never come here
+            default:
+                code.add("BREAK ON THIS, visitAddOp\n");
+                break;
+        }
+
+        //return
+        return code;
     }
 
     @Override
@@ -656,8 +681,20 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //store endOfWhileLabel
         int endOfWhileLabel = lastLabelCreated;
 
+        //generate new label
+        lastLabelCreated++;
+
+        //store ifCondition label
+        int conditionLabel = lastLabelCreated;
+
         //Ádd if code
-        code.add("if_icmpeq label" + endOfWhileLabel);
+        code.add("if_icmpeq label" + conditionLabel + "\n");
+
+        //If condition broken skip to end of While loop
+        code.add("goto label" + endOfWhileLabel + "\n");
+
+        //set condition label
+        code.add("label" + conditionLabel + ":\n");
 
         //if false than visit block
         code.addAll(visit(ctx.block()));

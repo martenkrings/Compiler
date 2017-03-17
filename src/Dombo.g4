@@ -25,11 +25,11 @@ varDec          : DATATYPE ID '=' value=expression                              
 block           : '{' statement* returnStatement? '}'
                 ;
 
-expression      :  stringExpression
-                |calcExpression
+expression      : calcExpression
                 | logicExpression
                 | '(' expression ')'
                 | functionCall
+                | stringExpression
                 ;
 
 variableAssign: name=ID '=' value=expression;
