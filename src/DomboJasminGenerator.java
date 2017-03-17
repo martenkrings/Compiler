@@ -733,7 +733,62 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     @Override
     public ArrayList<String> visitFor(DomboParser.ForContext ctx) {
-        return super.visitFor(ctx);
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+        //code for forLoop counter var declaration
+        code.addAll(visit(ctx.vardec));
+
+        //generate new label
+        lastLabelCreated++;
+
+        //store beginOfWhileLabel
+        int beginOfForLabel = lastLabelCreated;
+
+        //Set beginOfWhileLabel
+        code.add("label" + beginOfForLabel + ":\n");
+
+        //Add condition code
+        code.addAll(visit(ctx.condition));
+
+        //Add true code
+        code.add("ldc 1\n");
+
+        //generate new label
+        lastLabelCreated++;
+
+        //store endOfWhileLabel
+        int endOfForLabel = lastLabelCreated;
+
+        //generate new label
+        lastLabelCreated++;
+
+        //store ifCondition label
+        int conditionLabel = lastLabelCreated;
+
+        //Ádd if code
+        code.add("if_icmpeq label" + conditionLabel + "\n");
+
+        //If condition broken skip to end of While loop
+        code.add("goto label" + endOfForLabel + "\n");
+
+        //set condition label
+        code.add("label" + conditionLabel + ":\n");
+
+        //if false than visit block
+        code.addAll(visit(ctx.block()));
+
+        //add code that executes forLoops given command
+        code.addAll(visit(ctx.variableAssign()));
+
+        //jump back to top
+        code.add("goto label" + beginOfForLabel + "\n");
+
+        //set endOfWhileLabel
+        code.add("label" + endOfForLabel + ":\n");
+
+        //return
+        return code;
     }
 
     @Override

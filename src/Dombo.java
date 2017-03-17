@@ -46,10 +46,8 @@ public class Dombo {
         // Ask for expression
         System.out.print("Test> ");
         String line = "START function void main(){\n" +
-                "    int i = 0;\n" +
-                "         while(i < 10){\n" +
-                "         i = i * 2;\n" +
-                "         print \"haha\";\n" +
+                "         for(int i = 0; i < 50; i = i + 1){\n" +
+                "           print \"haha\";\n" +
                 "         }" +
                 "    return void;\n" +
                 "}";
