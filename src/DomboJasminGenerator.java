@@ -441,7 +441,16 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     @Override
     public ArrayList<String> visitStringWithExpression(DomboParser.StringWithExpressionContext ctx) {
-        return super.visitStringWithExpression(ctx);
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+        //Add StringExpression code
+        code.addAll(visit(ctx.stringExpression()));
+
+        //TODO: Add expressionCode
+        code.add("NOT IMPLEMENTED");
+
+        return code;
     }
 
     @Override
