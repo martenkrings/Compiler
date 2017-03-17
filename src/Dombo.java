@@ -46,8 +46,9 @@ public class Dombo {
         // Ask for expression
         System.out.print("Test> ");
         String line = "START function void main(){\n" +
-                "    String s = \"lalala \" + 1 + 4;\n" +
-                "     \n" +
+                "    String s = \"Nummer \";\n" +
+                "    int i = 5;\n" +
+                "    s = s + 5;\n" +
                 "    print s;\n" +
                 "    return void;\n" +
                 "}";

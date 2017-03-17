@@ -225,7 +225,13 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     @Override
     public ArrayList<String> visitMulOp(DomboParser.MulOpContext ctx) {
-        return super.visitMulOp(ctx);
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+
+
+        //return
+        return code;
     }
 
     @Override
@@ -444,11 +450,21 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //init ArrayList
         ArrayList<String> code = new ArrayList<>();
 
+        code.add("new java/lang/StringBuilder\n" +
+                "dup\n" +
+                "invokespecial\tjava/lang/StringBuilder/<init>()V ; Call string builder constructor\n");
+
         //Add StringExpression code
         code.addAll(visit(ctx.stringExpression()));
 
-        //TODO: Add expressionCode
-        code.add("NOT IMPLEMENTED");
+        code.add("invokevirtual\tjava/lang/StringBuilder.append(Ljava/lang/String;)V ;String number to StringBuilder\n");
+
+        code.addAll(visit(ctx.expression()));
+
+        code.add("invokevirtual\tjava/lang/StringBuilder.append(I)V ;Append number to StringBuilder\n" +
+                "invokevirtual\tjava/lang/StringBuilder.toString()V ;Call toString from StringBuilder\n" +
+                "astore_2\n" +
+                "aload_2\n");
 
         return code;
     }
