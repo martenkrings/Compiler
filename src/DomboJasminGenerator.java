@@ -207,7 +207,20 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     @Override
     public ArrayList<String> visitNegateOp(DomboParser.NegateOpContext ctx) {
-        return super.visitNegateOp(ctx);
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+        //Add code from child
+        code.addAll(visit(ctx.calcExpression()));
+
+        //Add -1 to stack
+        code.add("lcd -1\n");
+
+        //multiply
+        code.add("imul\n");
+
+        //return
+        return code;
     }
 
     @Override
