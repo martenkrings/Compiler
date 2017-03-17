@@ -1,4 +1,3 @@
-import Model.DataType;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -47,10 +46,12 @@ public class Dombo {
         // Ask for expression
         System.out.print("Test> ");
         String line = "START function void main(){\n" +
-                "    boolean b = false;\n" +
-                "    int integer = 23;\n" +
-                "    boolean tweedeBoolean = b;\n" +
+                "    int integer = 0;\n" +
+                "    if(1 < 5){\n" +
+                "        integer = 5;\n" +
+                "    }\n" +
                 "    String test = \"hallo\";\n" +
+                "    print test;\n" +
                 "    return void;\n" +
                 "}";
         System.out.println(line);

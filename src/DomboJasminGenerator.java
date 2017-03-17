@@ -11,6 +11,7 @@ import java.util.ArrayList;
  */
 public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
     private Method currentMethod;
+    private int lastLabelCreated;
 
     private ArrayList<String> visitChildrenWithoutNull(RuleNode ctx){
         //init ArrayList
@@ -53,7 +54,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //add java byteCode depending on dataType
         switch (dataType.getType()){
             case "BOOLEAN"  :
-                code.add("zstore_" + pos + "\n");
+                code.add("istore_" + pos + "\n");
                 break;
             case "STRING"   :
                 code.add("astore_" + pos + "\n");
@@ -76,10 +77,24 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     @Override
     public ArrayList<String> visitProgram(DomboParser.ProgramContext ctx) {
+        //init lastLabelCreated
+        lastLabelCreated = -1;
+
+        //init ArrayList
         ArrayList<String> code = new ArrayList<>();
 
-        //init
-        code = new ArrayList<>();
+
+        //Add code for the class
+        code.add(".class public MyTest ; Name and access modifier of the class\n" +
+                " .super java/lang/Object ; Inheritance definition\n" +
+                "\n" +
+                " ; Default constructor (empty constructor)\n" +
+                " .method public <init>()V\n" +
+                " aload_0 ; Loads \"this\" on the stack\n" +
+                " invokenonvirtual java/lang/Object/<init>()V ; Call super constructor\n" +
+                " return ; Terminate method\n" +
+                " .end method\n\n");
+
 
         //visit children
         code.addAll(visitChildrenWithoutNull(ctx));
@@ -94,17 +109,6 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         currentMethod = (Method) Dombo.parseTreeProperty.get(ctx);
         //Init arrayList
         ArrayList<String> code = new ArrayList<>();
-
-        //Add code for the class
-        code.add(".class public ClassName ; Name and access modifier of the class\n" +
-                " .super java/lang/Object ; Inheritance definition\n" +
-                "\n" +
-                " ; Default constructor (empty constructor)\n" +
-                " .method public <init>()V\n" +
-                " aload_0 ; Loads \"this\" on the stack\n" +
-                " invokenonvirtual java/lang/Object/<init>()V ; Call super constructor\n" +
-                " return ; Terminate method\n" +
-                " .end\n\n");
 
         //Add code for main method
         code.add(
@@ -153,14 +157,8 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     @Override
     public ArrayList<String> visitStatement(DomboParser.StatementContext ctx) {
-        //init ArrayList
-        ArrayList<String> code = new ArrayList<>();
-
-        //visit children
-        code.addAll(visitChildrenWithoutNull(ctx));
-
-        //return
-        return code;
+        //return result of children
+        return visitChildrenWithoutNull(ctx);
     }
 
     @Override
@@ -173,7 +171,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
     @Override
     public ArrayList<String> visitBlock(DomboParser.BlockContext ctx) {
         //todo
-        return super.visitBlock(ctx);
+        return visitChildrenWithoutNull(ctx);
     }
 
     @Override
@@ -192,9 +190,6 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
         //push value to stack
         code.addAll(visit(ctx.expression()));
-
-        //add \n
-        code.add("\n");
 
         //add top of stack to local variables overriding old variable
         code.addAll(pushTopOfStackToLocalVariables(currentParameter.getDataType(), ctx.name.getText(), currentParameter.getPosition()));
@@ -244,7 +239,44 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     @Override
     public ArrayList<String> visitCalcComparator(DomboParser.CalcComparatorContext ctx) {
-        return super.visitCalcComparator(ctx);
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+        //Add code for left
+        code.addAll(visit(ctx.leftCalc));
+
+        //Add code for right
+        code.addAll(visit(ctx.rightCalc));
+
+        //Add compare code for used operator
+        code.add("if_icp");
+        switch (ctx.op.getText()){
+            case "<":
+                code.add("lt");
+                break;
+            case ">":
+                code.add("gt");
+                break;
+            case ">=":
+                code.add("ge");
+                break;
+            case "<=":
+                code.add("le");
+                break;
+            case "==":
+                code.add("eq");
+                break;
+            case "!=":
+                code.add("ne");
+                break;
+
+            //we should never come here
+            default:
+                code.add("CRASH ON THis, visitCalcComparator");
+                break;
+        }
+
+        return code;
     }
 
     @Override
@@ -252,8 +284,12 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //init ArrayList
         ArrayList<String> code = new ArrayList<>();
 
-        //add push to stack code
-        code.add("ldc " + ctx.getText() + "\n");
+        //add push to stack code, true == 1 false == 0
+        if (ctx.getText().equalsIgnoreCase("true")){
+            code.add("ldc " + 1 + "\n");
+            return code;
+        }
+        code.add("ldc " + 0 + "\n");
 
         //return
         return code;
@@ -269,8 +305,8 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //init ArrayList
         ArrayList<String> code = new ArrayList<>();
 
-        //Load localParameter(boolean)
-        code.add("zload_" + currentMethod.getLocalVariable(ctx.ID().getText()).getPosition() + "\n");
+        //Load localParameter(boolean(int))
+        code.add("iload_" + currentMethod.getLocalVariable(ctx.ID().getText()).getPosition() + "\n");
 
         //return
         return code;
@@ -308,8 +344,8 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //init ArrayList
         ArrayList<String> code = new ArrayList<>();
 
-        //add java byte code Object(Sting) init code, remove "" from string
-        code.add("ldc\t\t\t#2\t // String " + ctx.getText().substring(1, ctx.getText().length() - 1) + "\n");
+        //add java byte code Object(Sting) init code
+        code.add("ldc " + ctx.getText() + "\n");
 
         //return
         return code;
@@ -322,7 +358,36 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     @Override
     public ArrayList<String> visitIfSingleStatement(DomboParser.IfSingleStatementContext ctx) {
-        return super.visitIfSingleStatement(ctx);
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+        //increase lastLabelCreated for a new label
+        lastLabelCreated++;
+
+        //get condition
+        code.addAll(visit(ctx.condition));
+
+        //add where the code should jump to if true
+        code.add(" label" + lastLabelCreated + "\n");
+
+        //increase lastLabelCreated for a new label marking end of if statement
+        lastLabelCreated++;
+        code.add("goto " + lastLabelCreated + "\n");
+
+        int prevLabel = lastLabelCreated - 1;
+
+        //Add true label
+        code.add(prevLabel + ":\n");
+
+        //visit true block
+        code.addAll(visit(ctx.block()));
+//        code.add("{XxxX}\n");
+
+        //Add end of if label
+        code.add(lastLabelCreated + ":\n");
+
+        //return
+        return code;
     }
 
     @Override
@@ -362,7 +427,20 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     @Override
     public ArrayList<String> visitPrintCommand(DomboParser.PrintCommandContext ctx) {
-        return super.visitPrintCommand(ctx);
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+        //Get System.out code
+        code.add("getstatic\t\tjava/lang/System.out Ljava/io/PrintStream;\n");
+
+        //push the to print value to the stack
+        code.addAll(visit(ctx.stringExpression()));
+
+        //print the value
+        code.add("invokevirtual\tjava/io/PrintStream.println(Ljava/lang/String;)V\n");
+
+        //return
+        return code;
     }
 
     @Override
