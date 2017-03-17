@@ -45,6 +45,12 @@ public class Method {
      * @param dataType dataType of new localVariable
      */
     public void storeLocalVariable(String variableIdentifier, DataType dataType){
+        //If this is called multiple times for the same variable change nothing
+        if (localVariables.get(variableIdentifier) != null){
+            return;
+        }
+
+        //add new variable
         localVariables.put(variableIdentifier, new LocalByteCodeParameter(localVariables.size(), dataType));
     }
 }

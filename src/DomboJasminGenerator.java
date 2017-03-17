@@ -249,7 +249,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         code.addAll(visit(ctx.rightCalc));
 
         //Add compare code for used operator
-        code.add("if_icp");
+        code.add("if_icmp");
         switch (ctx.op.getText()){
             case "<":
                 code.add("lt");
@@ -372,19 +372,19 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
         //increase lastLabelCreated for a new label marking end of if statement
         lastLabelCreated++;
-        code.add("goto " + lastLabelCreated + "\n");
+        code.add("goto label" + lastLabelCreated + "\n");
 
         int prevLabel = lastLabelCreated - 1;
 
         //Add true label
-        code.add(prevLabel + ":\n");
+        code.add("label" + prevLabel + ":\n");
 
         //visit true block
         code.addAll(visit(ctx.block()));
 //        code.add("{XxxX}\n");
 
         //Add end of if label
-        code.add(lastLabelCreated + ":\n");
+        code.add("label" + lastLabelCreated + ":\n");
 
         //return
         return code;
