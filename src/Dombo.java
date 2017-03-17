@@ -46,9 +46,17 @@ public class Dombo {
         // Ask for expression
         System.out.print("Test> ");
         String line = "START function void main(){\n" +
-                "    String s = \"5 is groter dan 3\";\n" +
-                "    if(5 < 3){\n" +
-                "        s = \"5 is kleiner dan 3\";\n" +
+                "    String s = \"Dit is de stomme standaard String\";\n" +
+                "    if(true == false){\n" +
+                "        s = \"in eerste if\";\n" +
+                "    } else if(true == true){\n" +
+                "        if(true == false){\n" +
+                "            s = \"in if in if else\";\n" +
+                "        } else if(true == true){\n" +
+                "            s = \"CONGRATULATIONSSS\";\n" +
+                "        }\n" +
+                "    } else {\n" +
+                "        s = \"in else\";\n" +
                 "    }\n" +
                 "     \n" +
                 "    print s;\n" +

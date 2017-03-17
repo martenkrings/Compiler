@@ -369,8 +369,11 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitNotOp(DomboParser.NotOpContext ctx) {
-        //No type checking needed
-        return super.visitNotOp(ctx);
+        //visit children
+        super.visitNotOp(ctx);
+
+        //return boolean DataType
+        return new DataType(DataTypeEnum.BOOLEAN);
     }
 
     @Override
@@ -380,7 +383,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         //Get condition Model.DataType
         DataType dataType = visit(ctx.condition);
 
-        //Check if conditionDataType is of boolean type is not throw new Model.TypeError
+        //Check if conditionDataType is of boolean type if not throw new Model.TypeError
         if (!compareDataTypes(dataType, DataTypeEnum.BOOLEAN.toString())) {
             try {
                 throw new TypeError("Expected " + DataTypeEnum.BOOLEAN + " for if condition got " + dataType.getType() + ". At line: " + ctx.start.getLine());

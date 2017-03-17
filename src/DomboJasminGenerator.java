@@ -13,15 +13,15 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
     private Method currentMethod;
     private int lastLabelCreated;
 
-    private ArrayList<String> visitChildrenWithoutNull(RuleNode ctx){
+    private ArrayList<String> visitChildrenWithoutNull(RuleNode ctx) {
         //init ArrayList
         ArrayList<String> code = new ArrayList<>();
 
         //visit all children
-        for (int i = 0; i < ctx.getChildCount(); i++){
+        for (int i = 0; i < ctx.getChildCount(); i++) {
             ArrayList<String> temp = visit(ctx.getChild(i));
             //add children results to code if they aren't null
-            if (temp != null){
+            if (temp != null) {
                 code.addAll(temp);
             }
         }
@@ -32,31 +32,33 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     /**
      * Calls pushTopOfstackToLocalVariables without a custom position
-     * @param dataType dataType of variable
+     *
+     * @param dataType           dataType of variable
      * @param variableIdentifier identifier of variable
      * @return byte code for storing the variable in local parameters
      */
-    private ArrayList<String> pushTopOfStackToLocalVariables(DataType dataType, String variableIdentifier){
+    private ArrayList<String> pushTopOfStackToLocalVariables(DataType dataType, String variableIdentifier) {
         return pushTopOfStackToLocalVariables(dataType, variableIdentifier, currentMethod.getLocalVariables().size());
     }
 
     /**
      * Generates java byte code for storing a variable in the local parameters
-     * @param dataType dataType of variable
+     *
+     * @param dataType           dataType of variable
      * @param variableIdentifier identifier of variable
-     * @param pos custom position of variable
+     * @param pos                custom position of variable
      * @return byte code for storing variable in local parameters
      */
-    private ArrayList<String> pushTopOfStackToLocalVariables(DataType dataType, String variableIdentifier, int pos){
+    private ArrayList<String> pushTopOfStackToLocalVariables(DataType dataType, String variableIdentifier, int pos) {
         //init ArrayList
         ArrayList<String> code = new ArrayList<>();
 
         //add java byteCode depending on dataType
-        switch (dataType.getType()){
-            case "BOOLEAN"  :
+        switch (dataType.getType()) {
+            case "BOOLEAN":
                 code.add("istore_" + pos + "\n");
                 break;
-            case "STRING"   :
+            case "STRING":
                 code.add("astore_" + pos + "\n");
                 break;
             case "INT":
@@ -112,10 +114,10 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
         //Add code for main method
         code.add(
-        " ; Model.Method definition for public static void main(String[] args)\n" +
-                " .method public static main([Ljava/lang/String;)V\n" +
-                " .limit stack 100 ; Size of the operand stack\n" +
-                " .limit locals 100 ; Number of parameters + locals\n\n");
+                " ; Model.Method definition for public static void main(String[] args)\n" +
+                        " .method public static main([Ljava/lang/String;)V\n" +
+                        " .limit stack 100 ; Size of the operand stack\n" +
+                        " .limit locals 100 ; Number of parameters + locals\n\n");
 
         //Add children code
         code.addAll(visitChildrenWithoutNull(ctx));
@@ -123,7 +125,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //Add code for ending method
         code.add(
                 " \n\nreturn\n" +
-                ".end method");
+                        ".end method");
 
         //Returnr
         return code;
@@ -250,7 +252,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
         //Add compare code for used operator
         code.add("if_icmp");
-        switch (ctx.op.getText()){
+        switch (ctx.op.getText()) {
             case "<":
                 code.add("lt");
                 break;
@@ -272,33 +274,12 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
             //we should never come here
             default:
-                code.add("CRASH ON THis, visitCalcComparator");
+                code.add("CRASH ON THIS, visitCalcComparator");
                 break;
         }
 
-        //increase lastLabelCreated for a new label
-        lastLabelCreated++;
-
-        //add where the code should jump to if true
-        code.add(" label" + lastLabelCreated + "\n");
-
-        //Code for if false
-        code.add("ldc 1\n");
-
-        //increase lastLabelCreated for a new label marking end of if statement
-        lastLabelCreated++;
-        code.add("goto label" + lastLabelCreated + "\n");
-
-        int prevLabel = lastLabelCreated - 1;
-
-        //Add true label
-        code.add("label" + prevLabel + ":\n");
-
-        //When true
-        code.add("ldc 0\n");
-
-        //Add end of if label
-        code.add("label" + lastLabelCreated + ":\n");
+        //make rest of code in method
+        code.addAll(makeStandardComparatorCode());
 
         return code;
     }
@@ -309,7 +290,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         ArrayList<String> code = new ArrayList<>();
 
         //add push to stack code, true == 1 false == 0
-        if (ctx.getText().equalsIgnoreCase("true")){
+        if (ctx.getText().equalsIgnoreCase("true")) {
             code.add("ldc " + 1 + "\n");
             return code;
         }
@@ -321,7 +302,71 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     @Override
     public ArrayList<String> visitLogicComparator(DomboParser.LogicComparatorContext ctx) {
-        return super.visitLogicComparator(ctx);
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+        //Add code for left
+        code.addAll(visit(ctx.leftLogic));
+
+        //Add code for right
+        code.addAll(visit(ctx.rightLogic));
+
+        //Add compare code for used operator
+        code.add("if_icmp");
+        switch (ctx.op.getText()) {
+            case "==":
+                code.add("eq");
+                break;
+            case "!=":
+                code.add("ne");
+                break;
+
+            //we should never come here
+            default:
+                code.add("CRASH ON THis, visitLogicComparator");
+                break;
+        }
+
+        //make rest of code
+        code.addAll(makeStandardComparatorCode());
+
+        return code;
+    }
+
+    public ArrayList<String> makeStandardComparatorCode() {
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+        //increase lastLabelCreated for a new label
+        lastLabelCreated++;
+
+        //store trueLabel
+        int trueLabel = lastLabelCreated;
+
+        //add where the code should jump to if true
+        code.add(" label" + trueLabel + "\n");
+
+        //Code for if false
+        code.add("ldc 0\n");
+
+        //increase lastLabelCreated for a new label marking end of if statement
+        lastLabelCreated++;
+
+        //store endOfIf label
+        int endOfIfLabel = lastLabelCreated;
+
+        code.add("goto label" + endOfIfLabel + "\n");
+
+        //Add true label
+        code.add("label" + trueLabel + ":\n");
+
+        //When true
+        code.add("ldc 1\n");
+
+        //Add end of if label
+        code.add("label" + endOfIfLabel + ":\n");
+
+        return code;
     }
 
     @Override
@@ -338,7 +383,42 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     @Override
     public ArrayList<String> visitNotOp(DomboParser.NotOpContext ctx) {
-        return super.visitNotOp(ctx);
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+        //add code of logicExpression
+        code.addAll(visit(ctx.logicExpression()));
+
+        //Add code for true
+        code.add("ldc 1\n");
+
+        //generate new label
+        lastLabelCreated++;
+
+        //add code for not equals if
+        code.add("if_icmpne label" + lastLabelCreated + "\n");
+
+        //add code for if false
+        code.add("ldc 0\n");
+
+        //generate new label
+        lastLabelCreated++;
+
+        //jump to end of if statement
+        code.add("goto label" + lastLabelCreated + "\n");
+
+        int prevLabel = lastLabelCreated - 1;
+
+        //code for if true
+        code.add("label" + prevLabel + ":\n");
+
+        //add code for true
+        code.add("ldc 1\n");
+
+        //add code that marks end of if
+        code.add("label" + lastLabelCreated + ":\n");
+
+        return code;
     }
 
     @Override
@@ -389,28 +469,34 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         code.addAll(visit(ctx.condition));
 
         //add true boolean
-        code.add("ldc 0\n");
+        code.add("ldc 1\n");
 
         //increase lastLabelCreated for a new label
         lastLabelCreated++;
 
+        //store label marking true
+        int trueLabel = lastLabelCreated;
+
         //add if statement
-        code.add("if_icmpeq label" + lastLabelCreated + "\n");
+        code.add("if_icmpeq label" + trueLabel + "\n");
 
         //increase lastLabelCreated for a new label marking end of if statement
         lastLabelCreated++;
-        code.add("goto label" + lastLabelCreated + "\n");
 
-        int prevLabel = lastLabelCreated - 1;
+        //store lable marking end of if
+        int endLabel = lastLabelCreated;
+
+        //jump to end of if
+        code.add("goto label" + endLabel + "\n");
 
         //Add true label
-        code.add("label" + prevLabel + ":\n");
+        code.add("label" + trueLabel + ":\n");
 
         //visit true block
         code.addAll(visit(ctx.block()));
 
         //Add end of if label
-        code.add("label" + lastLabelCreated + ":\n");
+        code.add("label" + endLabel + ":\n");
 
         //return
         return code;
@@ -418,13 +504,92 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     @Override
     public ArrayList<String> visitIfElseStatement(DomboParser.IfElseStatementContext ctx) {
-        return super.visitIfElseStatement(ctx);
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+        //get condition
+        code.addAll(visit(ctx.condition));
+
+        //add true boolean
+        code.add("ldc 1\n");
+
+        //increase lastLabelCreated for a new label
+        lastLabelCreated++;
+
+        //remember label marking true
+        int trueLabel = lastLabelCreated;
+
+        //add if statement
+        code.add("if_icmpeq label" + trueLabel + "\n");
+
+        //code for if false(visit the second block)
+        code.addAll(visit(ctx.block().get(1)));
+
+        //increase lastLabelCreated for a new label marking end of if statement
+        lastLabelCreated++;
+
+        //StoreEndOfIfLabel
+        int endOfIfLabel = lastLabelCreated;
+
+        //jump to the end of if statement
+        code.add("goto label" + endOfIfLabel + "\n");
+
+        //Add true label
+        code.add("label" + trueLabel + ":\n");
+
+        //visit true block
+        code.addAll(visit(ctx.block().get(0)));
+
+        //Add end of if label
+        code.add("label" + endOfIfLabel + ":\n");
+
+        //return
+        return code;
     }
 
     @Override
     public ArrayList<String> visitIfElseIfStatement(DomboParser.IfElseIfStatementContext ctx) {
-        return super.visitIfElseIfStatement(ctx);
-    }
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+        //get condition
+        code.addAll(visit(ctx.condition));
+
+        //add true boolean
+        code.add("ldc 1\n");
+
+        //increase lastLabelCreated for a new label
+        lastLabelCreated++;
+
+        //get the previous label
+        int trueLabel = lastLabelCreated;
+
+        //add if statement
+        code.add("if_icmpeq label" + trueLabel + "\n");
+
+        //code for if false(visit the other if statement)
+        code.addAll(visit(ctx.ifStatement()));
+
+        //increase lastLabelCreated for a new label marking end of if statement
+        lastLabelCreated++;
+
+        //StoreEndOfIfLabel
+        int endOfIfLabel = lastLabelCreated;
+
+        //jump to the end of if statement
+        code.add("goto label" + endOfIfLabel + "\n");
+
+        //Add true label
+        code.add("label" + trueLabel + ":\n");
+
+        //visit true block
+        code.addAll(visit(ctx.block()));
+
+        //Add end of if label
+        code.add("label" + endOfIfLabel + ":\n");
+
+        //return
+        return code;    }
 
     @Override
     public ArrayList<String> visitWhile(DomboParser.WhileContext ctx) {

@@ -43,9 +43,9 @@ calcExpression  : INT                                                           
 
 logicExpression : BOOLEANVALUE                                                                                  #BoolValue
                 | ID                                                                                            #BoolVariable
-                | leftLogic=logicExpression op=('==' | '!=' | 'and' | 'or') rightLogic=logicExpression          #LogicComparator
+                | leftLogic=logicExpression op=('==' | '!=') rightLogic=logicExpression                         #LogicComparator
                 | leftCalc=calcExpression op=('<' | '>' | '>=' | '<=' | '==' | '!=') rightCalc=calcExpression   #CalcComparator
-                | ('!' | 'not') logicExpression                                                                 #NotOp
+                | ('!' | 'not') '(' logicExpression ')'                                                         #NotOp
                 ;
 
 stringExpression : STRINGVALUE                                                      #StringValue
@@ -63,7 +63,7 @@ ifStatement     : 'if' '(' condition=logicExpression ')' block                  
 whileLoop       : 'while' '(' condition=logicExpression ')' block                                                                    #While
                 ;
 
-forLoop         : 'for' '(' vardec=varDec ';' condition=logicExpression ';' variableAssign ')' block                                               #For
+forLoop         : 'for' '(' vardec=varDec ';' condition=logicExpression ';' variableAssign ')' block                                 #For
                 ;
 
 functionDec     : 'function' returntype=(RETURNTYPE | DATATYPE) name=ID '(' ((functionParameter ',')* (functionParameter))? ')' '{' statement* returnStatement '}'   #FunctionDeclaration
