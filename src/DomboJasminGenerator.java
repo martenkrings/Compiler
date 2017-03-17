@@ -212,7 +212,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         code.addAll(visit(ctx.right));
 
         //add code for used operator
-        switch (ctx.op.getText()){
+        switch (ctx.op.getText()) {
             case "+":
                 code.add("iadd\n");
                 break;
@@ -253,7 +253,29 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //init ArrayList
         ArrayList<String> code = new ArrayList<>();
 
+        //add lefts code
+        code.addAll(visit(ctx.left));
 
+        //add rights code
+        code.addAll(visit(ctx.right));
+
+        //add code for used operator
+        switch (ctx.op.getText()) {
+            case "*":
+                code.add("imul\n");
+                break;
+            case "/":
+                code.add("idiv\n");
+                break;
+            case "%":
+                code.add("irem\n");
+                break;
+
+            //We should never come here
+            default:
+                code.add("BREAK ON THIS, visitMulOp\n");
+                break;
+        }
 
         //return
         return code;

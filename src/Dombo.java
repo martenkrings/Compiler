@@ -48,7 +48,7 @@ public class Dombo {
         String line = "START function void main(){\n" +
                 "    int i = 0;\n" +
                 "         while(i < 10){\n" +
-                "         i = i + 1;\n" +
+                "         i = i * 2;\n" +
                 "         print \"haha\";\n" +
                 "         }" +
                 "    return void;\n" +
