@@ -611,11 +611,49 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         code.add("label" + endOfIfLabel + ":\n");
 
         //return
-        return code;    }
+        return code;
+    }
 
     @Override
     public ArrayList<String> visitWhile(DomboParser.WhileContext ctx) {
-        return super.visitWhile(ctx);
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+        //generate new label
+        lastLabelCreated++;
+
+        //store beginOfWhileLabel
+        int beginOfWhileLabel = lastLabelCreated;
+
+        //Set beginOfWhileLabel
+        code.add("label" + beginOfWhileLabel + ":\n");
+
+        //Add condition code
+        code.addAll(visit(ctx.condition));
+
+        //Add true code
+        code.add("ldc 1\n");
+
+        //generate new label
+        lastLabelCreated++;
+
+        //store endOfWhileLabel
+        int endOfWhileLabel = lastLabelCreated;
+
+        //Ádd if code
+        code.add("if_icmpeq label" + endOfWhileLabel);
+
+        //if false than visit block
+        code.addAll(visit(ctx.block()));
+
+        //jump back to top
+        code.add("goto label" + beginOfWhileLabel + "\n");
+
+        //set endOfWhileLabel
+        code.add("label" + endOfWhileLabel + ":\n");
+
+        //return
+        return code;
     }
 
     @Override
