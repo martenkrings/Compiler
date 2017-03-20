@@ -46,9 +46,11 @@ public class Dombo {
         // Ask for expression
         System.out.print("Test> ");
         String line = "START function void main(){\n" +
-                "         for(int i = 0; i < 50; i = i + 1){\n" +
-                "           print \"haha\";\n" +
-                "         }" +
+                "         String s = \"hallo\";\n" +
+                "         return void;\n" +
+                "}\n" +
+                "\n" +
+                "function void testFunctie (){\n" +
                 "    return void;\n" +
                 "}";
         System.out.println(line);

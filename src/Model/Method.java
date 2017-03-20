@@ -35,6 +35,14 @@ public class Method {
         return localVariables.get(identifier);
     }
 
+    public String getIdentifier() {
+        return identifier;
+    }
+
+    public MethodType getMethodType() {
+        return methodType;
+    }
+
     public HashMap<String, LocalByteCodeParameter> getLocalVariables() {
         return localVariables;
     }

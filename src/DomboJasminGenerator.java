@@ -5,6 +5,7 @@ import Model.Variable;
 import org.antlr.v4.runtime.tree.RuleNode;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Sander on 6-3-2017.
@@ -125,7 +126,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //Add code for ending method
         code.add(
                 " \n\nreturn\n" +
-                        ".end method");
+                        ".end method\n\n");
 
         //Returnr
         return code;
@@ -151,9 +152,13 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     @Override
     public ArrayList<String> visitReturnVoidCommand(DomboParser.ReturnVoidCommandContext ctx) {
+        //init ArrayList
         ArrayList<String> code = new ArrayList<>();
-        code.add("this is just a stupid test in the void return command");
-        //return empty list
+
+        //add return Void code
+        code.add("return\n");
+
+        //return
         return code;
     }
 
@@ -793,7 +798,62 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     @Override
     public ArrayList<String> visitFunctionDeclaration(DomboParser.FunctionDeclarationContext ctx) {
-        return super.visitFunctionDeclaration(ctx);
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+        //get current method
+        Method method = (Method) Dombo.parseTreeProperty.get(ctx);
+
+        //get list of the methods parameters
+        List list = method.getMethodType().getParameters();
+
+        //Add begin of method code
+        code.add(".method public " + method.getIdentifier() + "(");
+
+        //for each parameter of the method
+        for (int i = 0; i < list.size(); i++){
+            code.add(giveJasminMethodType((DataType) list.get(i)));
+        }
+
+        //add returnType
+        code.add(")" + giveJasminMethodType(method.getMethodType().getReturnType()) + "\n");
+
+        //add stack and local size
+        code.add(".limit stack 100\n.limit locals 100\n");
+
+        //visit children
+        code.addAll(visitChildrenWithoutNull(ctx));
+
+        //add end of method code
+        code.add(".end method\n");
+
+        //return
+        return code;
+    }
+
+    /**
+     * Gives bytecode method type for DataTypes
+     * Integer => I
+     * Boolean => I
+     * String => Ljava/lang/String
+     * Void => V
+     * @param dataType datatype for wich to write bytecode
+     * @return  bytecode datatype
+     */
+    public String giveJasminMethodType(DataType dataType){
+        switch (dataType.getType()){
+            case "STRING":
+                return "Ljava/lang/String";
+            case "BOOLEAN":
+                return "I";
+            case "INT":
+                return "I";
+            case "VOID":
+                return "V";
+
+            default:
+                return "SHOULD NOT REACH THIS CODE, giveJasminMethodType";
+        }
     }
 
     @Override
@@ -831,7 +891,30 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     @Override
     public ArrayList<String> visitReturnCommand(DomboParser.ReturnCommandContext ctx) {
-        return super.visitReturnCommand(ctx);
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+        //visit returned expression
+        code.addAll(visitChildrenWithoutNull(ctx));
+
+        //add code depending on returnType
+        switch (currentMethod.getMethodType().getReturnType().getType()){
+            case "STRING":
+                code.add("areturn\n");
+                break;
+            case "BOOLEAN":
+                code.add("ireturn\n");
+                break;
+            case "INT":
+                code.add("ireturn\n");
+                break;
+
+            default:
+                code.add("SHOULD NOT REACH THIS CODE, visitReturnCommand\n");
+        }
+
+        //return
+        return code;
     }
 
     @Override
