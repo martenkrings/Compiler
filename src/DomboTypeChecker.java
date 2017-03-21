@@ -75,11 +75,8 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         //visit the START function
         visit(ctx.startFunctionDec());
 
-        //Visit the rest, note it does not matter that above functions get visited twice, they will simply be overridden
-        super.visitProgram(ctx);
-
         //return 'something'
-        return new DataType("");
+        return null;
     }
 
     @Override
@@ -166,22 +163,19 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
             }
         }
 
-        //If variable already exisit throw new typeError
-        if (scopes.peek().lookUpVariable(ctx.ID().getText()) != null) {
-            try {
-                throw new TypeError("Variable " + ctx.ID().getText() + " already defined. At: " + ctx.start.getLine());
-            } catch (TypeError typeError) {
-                typeError.printStackTrace();
-            }
-        }
-
         //Add variable
         scopes.peek().declareVariable(ctx.ID().getText(), actualDataType);
 
-        //Add variable to parseTreeProperty
-        Dombo.parseTreeProperty.put(ctx, new Variable(ctx.ID().getText(), actualDataType));
+        Variable variable = new Variable(ctx.ID().getText(), actualDataType);
 
-        super.visitVarDeclaration(ctx);
+        //Add variable to parseTreeProperty
+        Dombo.parseTreeProperty.put(ctx, variable);
+
+        //If this is a class variable than
+        if (scopes.peek().getParentScope() == null){
+            //add it to the list of class variables in the JasminGenerator
+            DomboJasminGenerator.classVariables.add(variable);
+        }
 
         //return Model.DataType
         return actualDataType;
@@ -189,9 +183,6 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitGenericVarDeclaration(DomboParser.GenericVarDeclarationContext ctx) {
-        //Add a new variable to the current scope
-        scopes.peek().declareVariable(ctx.ID().getText(), new DataType(ctx.DATATYPE().getText()));
-
         //if variable already exist than throw new TypeError
         if (scopes.peek().lookUpVariable(ctx.ID().getText()) != null) {
             try {
@@ -201,8 +192,20 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
             }
         }
 
+        //Add a new variable to the current scope
+        scopes.peek().declareVariable(ctx.ID().getText(), new DataType(ctx.DATATYPE().getText()));
+
+        //make new variable
+        Variable variable = new Variable(ctx.ID().getText(), new DataType(ctx.DATATYPE().getText()));
+
         //Add variable to parseTreeProperty
-        Dombo.parseTreeProperty.put(ctx, new Variable(ctx.ID().getText(), new DataType(ctx.DATATYPE().getText())));
+        Dombo.parseTreeProperty.put(ctx, variable);
+
+        //If this is a class variable than
+        if (scopes.peek().getParentScope() == null){
+            //add it to the list of class variables in the JasminGenerator
+            DomboJasminGenerator.classVariables.add(variable);
+        }
 
         //Visit children
         return super.visitGenericVarDeclaration(ctx);

@@ -1,7 +1,4 @@
-import Model.DataType;
-import Model.LocalByteCodeParameter;
-import Model.Method;
-import Model.Variable;
+import Model.*;
 import org.antlr.v4.runtime.tree.RuleNode;
 
 import java.util.ArrayList;
@@ -14,6 +11,9 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
     static boolean hasReadStatement = false;
     private Method currentMethod;
     private int lastLabelCreated;
+
+    //List that is fileld by TypeChecker
+    public static ArrayList<Variable> classVariables = new ArrayList<>();
 
     private ArrayList<String> visitChildrenWithoutNull(RuleNode ctx) {
         //init ArrayList
@@ -32,31 +32,62 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         return code;
     }
 
+
+    /**
+     * method that find a class variable by its identifier
+     *
+     * @param identifier identifier of variable to be found
+     * @return the found variable
+     */
+    private Variable findClassVariable(String identifier) {
+        //search the classVariable
+        for (Variable variable : classVariables) {
+            if (variable.getIdentifier().equals(identifier)) {
+                return variable;
+            }
+        }
+
+        //return null, should never happene
+        return null;
+    }
+
     /**
      * Calls pushTopOfstackToLocalVariables without a custom position
      *
-     * @param dataType           dataType of variable
-     * @param variableIdentifier identifier of variable
+     * @param localByteCodeParameter parameter to be pushed
+     * @param variableIdentifier     identifier of variable
      * @return byte code for storing the variable in local parameters
      */
-    private ArrayList<String> pushTopOfStackToLocalVariables(DataType dataType, String variableIdentifier) {
-        return pushTopOfStackToLocalVariables(dataType, variableIdentifier, currentMethod.getLocalVariables().size());
+    private ArrayList<String> pushTopOfStackToStorage(LocalByteCodeParameter localByteCodeParameter, String variableIdentifier) {
+        int pos = 0;
+        if (currentMethod != null) {
+            pos = currentMethod.getLocalVariables().size();
+        }
+
+        return pushTopOfStackToStorage(localByteCodeParameter, variableIdentifier, pos);
     }
 
     /**
      * Generates java byte code for storing a variable in the local parameters
      *
-     * @param dataType           dataType of variable
-     * @param variableIdentifier identifier of variable
-     * @param pos                custom position of variable
+     * @param localByteCodeParameter parameter to be pushed
+     * @param variableIdentifier     identifier of variable
+     * @param pos                    custom position of variable
      * @return byte code for storing variable in local parameters
      */
-    private ArrayList<String> pushTopOfStackToLocalVariables(DataType dataType, String variableIdentifier, int pos) {
+    private ArrayList<String> pushTopOfStackToStorage(LocalByteCodeParameter localByteCodeParameter, String variableIdentifier, int pos) {
         //init ArrayList
         ArrayList<String> code = new ArrayList<>();
 
+        //if variable == null than we're dealing with a class variable
+        if (localByteCodeParameter == null) {
+            //add code for storing a class variable
+            code.add("putfield MyTest/" + variableIdentifier + " " + giveByteCodeMethodType(findClassVariable(variableIdentifier).getDataType()) + "\n");
+            return code;
+        }
+
         //add java byteCode depending on dataType
-        switch (dataType.getType()) {
+        switch (localByteCodeParameter.getDataType().getType()) {
             case "BOOLEAN":
                 code.add("istore_" + pos + "\n");
                 break;
@@ -73,7 +104,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         }
 
         //remember where we stored the new local variable
-        currentMethod.storeLocalVariable(variableIdentifier, dataType);
+        currentMethod.storeLocalVariable(variableIdentifier, localByteCodeParameter.getDataType());
 
         //return
         return code;
@@ -90,18 +121,46 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
         //Add code for the class
         code.add(".class public MyTest ; Name and access modifier of the class\n" +
-                " .super java/lang/Object ; Inheritance definition\n" +
-                "\n" +
-                " ; Default constructor (empty constructor)\n" +
-                " .method public <init>()V\n" +
-                " aload_0 ; Loads \"this\" on the stack\n" +
-                " invokenonvirtual java/lang/Object/<init>()V ; Call super constructor\n" +
-                " return ; Terminate method\n" +
-                " .end method\n\n");
+                " .super java/lang/Object ; Inheritance definition\n\n");
+
+        //add code for class variables
+        for (Variable variable : classVariables) {
+            code.add(".field " + variable.getIdentifier() + " " + giveByteCodeMethodType(variable.getDataType()) + "\n");
+        }
+
+        //add start of default constructor
+        code.add(
+                "\n;Default constructor (empty constructor)\n" +
+                        ".method public <init>()V\n");
+
+        //add middle of default constructor, add a stackSize so class variables fit in stack
+        code.add(".limit stack 3\n" +
+                "aload_0 ; Loads \"this\" on the stack\n" +
+                "invokenonvirtual java/lang/Object/<init>()V ; Call super constructor\n");
+
+        //visit global var declarations and add their code
+        for (int i = 0; i < ctx.statement().size(); i++) {
+            DomboParser.VarDecContext varDecContext = ctx.statement().get(i).varDec();
+            if (varDecContext != null) {
+                code.addAll(visit(ctx.statement().get(i).varDec()));
+            }
+        }
+
+        //add end of method
+        code.add(
+                "return ; Terminate method\n" +
+                        ".end method\n\n");
 
 
-        //visit children
-        code.addAll(visitChildrenWithoutNull(ctx));
+        //visit startFunctionDec
+        code.addAll(visit(ctx.startFunctionDec()));
+
+        //visit functions
+        for (int i = 0; i < ctx.functionDec().size(); i++) {
+            if (ctx.functionDec().get(i) != null) {
+                code.addAll(visit(ctx.functionDec(i)));
+            }
+        }
 
         //return
         return code;
@@ -111,6 +170,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
     public ArrayList<String> visitStartFunctionDec(DomboParser.StartFunctionDecContext ctx) {
         //Set current method
         currentMethod = (Method) Dombo.parseTreeProperty.get(ctx);
+
         //Init arrayList
         ArrayList<String> code = new ArrayList<>();
 
@@ -118,8 +178,8 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         code.add(
                 " ; Model.Method definition for public static void main(String[] args)\n" +
                         ".method public static main([Ljava/lang/String;)V\n" +
-                        ".limit stack 100 ; Size of the operand stack\n" +
-                        ".limit locals 100 ; Number of parameters + locals\n" +
+                        ".limit stack 5 ; Size of the operand stack\n" +
+                        ".limit locals 5 ; Number of parameters + locals\n" +
                         "new MyTest\n" +
                         "dup\n" +
                         "invokenonvirtual MyTest/<init>()V\n" +
@@ -127,8 +187,8 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
                         " return\n" +
                         ".end method\n\n" +
                         ".method public run()V\n" +
-                        ".limit stack 100 ; Size of the operand stack\n" +
-                        ".limit locals 100 ; Number of parameters + locals\n" );
+                        ".limit stack 5 ; Size of the operand stack\n" +
+                        ".limit locals 5 ; Number of parameters + locals\n");
 
         //Add children code
         code.addAll(visitChildrenWithoutNull(ctx));
@@ -138,7 +198,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
                 " \nreturn\n" +
                         ".end method\n\n");
 
-        //Returnr
+        //Return
         return code;
     }
 
@@ -150,22 +210,24 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //get the current variable we're visiting
         Variable variable = (Variable) Dombo.parseTreeProperty.get(ctx);
 
-        //if we're defining globals
-        if (currentMethod == null){
-            //code for defining global
-            code.add("field private static global" + variable.getIdentifier() + " " + giveByteCodeMethodType(variable.getDataType()) + "\n");
+        //change variable to a localByteCodeParameter
+        LocalByteCodeParameter dummy;
 
-            //return
-            return code;
+        //if currentMethod == null than this is a class variable so change dummy to null
+        if (currentMethod == null) {
+            dummy = null;
+            //load this reference
+            code.add("aload_0\n");
+        } else {
+            //'transform' variable to localByteCodeParameter
+            dummy = new LocalByteCodeParameter(-1, variable.getDataType());
         }
 
         //visit children
         code.addAll(visitChildrenWithoutNull(ctx));
 
-
-
         //push top of stack to a new local variable
-        code.addAll(pushTopOfStackToLocalVariables(variable.getDataType(), variable.getIdentifier()));
+        code.addAll(pushTopOfStackToStorage(dummy, variable.getIdentifier()));
 
         //return
         return code;
@@ -194,15 +256,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //init ArrayList
         ArrayList<String> code = new ArrayList<>();
 
-        //get varaible
-        Variable variable = (Variable) Dombo.parseTreeProperty.get(ctx);
-
-        //Generic var declaration only has byte code for globals
-        if (currentMethod == null){
-            code.add(".field private static " + variable.getIdentifier() + " " + giveByteCodeMethodType(variable.getDataType()) + "\n");
-        }
-
-        //return
+        //return empty list
         return code;
     }
 
@@ -223,14 +277,41 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //init ArrayList
         ArrayList<String> code = new ArrayList<>();
 
-        //get the current variable being visited
-        LocalByteCodeParameter currentParameter = currentMethod.getLocalVariable(ctx.name.getText());
+        //boolean that 'tells' whether we're visiting a class variable or not
+        boolean classVar = true;
+
+        LocalByteCodeParameter currentParameter = null;
+
+        //if currentMethod != null
+        if (currentMethod != null) {
+            //get the current variable being visited
+            currentParameter = currentMethod.getLocalVariable(ctx.name.getText());
+
+            //if currentParameter is found than it is not a class variable
+            if (currentParameter != null) {
+
+                classVar = false;
+            }
+        }
+
+        //if we're dealing with a class variable
+        if (classVar) {
+            //load this reference
+            code.add("aload_0\n");
+
+            //push value to stack
+            code.addAll(visit(ctx.expression()));
+
+            //add top of stack to a global variable
+            code.addAll(pushTopOfStackToStorage(null, ctx.name.getText()));
+            return code;
+        }
 
         //push value to stack
         code.addAll(visit(ctx.expression()));
 
         //add top of stack to local variables overriding old variable
-        code.addAll(pushTopOfStackToLocalVariables(currentParameter.getDataType(), ctx.name.getText(), currentParameter.getPosition()));
+        code.addAll(pushTopOfStackToStorage(currentParameter, ctx.name.getText(), currentParameter.getPosition()));
 
         //return
         return code;
@@ -321,6 +402,16 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
     public ArrayList<String> visitIntVariable(DomboParser.IntVariableContext ctx) {
         //init ArrayList
         ArrayList<String> code = new ArrayList<>();
+
+        //if we're dealing with a class variable
+        if (currentMethod == null || currentMethod.getLocalVariable(ctx.ID().getText()) == null) {
+            //get this
+            code.add("aload_0\n");
+
+            //make class variable code
+            code.add("getfield MyTest/" + ctx.ID().getText() + " " + giveByteCodeMethodType(new DataType(DataTypeEnum.INT)) + "\n");
+            return code;
+        }
 
         //Load localParameter(int)
         code.add("iload_" + currentMethod.getLocalVariable(ctx.ID().getText()).getPosition() + "\n");
@@ -476,6 +567,16 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //init ArrayList
         ArrayList<String> code = new ArrayList<>();
 
+        //if we're dealing with a class variable
+        if (currentMethod == null || currentMethod.getLocalVariable(ctx.ID().getText()) == null) {
+            //get this
+            code.add("aload_0\n");
+
+            //make class variable code
+            code.add("getfield MyTest/" + ctx.ID().getText() + " " + giveByteCodeMethodType(new DataType(DataTypeEnum.BOOLEAN)) + "\n");
+            return code;
+        }
+
         //Load localParameter(boolean(int))
         code.add("iload_" + currentMethod.getLocalVariable(ctx.ID().getText()).getPosition() + "\n");
 
@@ -544,6 +645,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
                 "astore_2\n" +
                 "aload_2\n");
 
+        //todo check this load
         return code;
     }
 
@@ -575,6 +677,16 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
     public ArrayList<String> visitStringVariable(DomboParser.StringVariableContext ctx) {
         //init ArrayList
         ArrayList<String> code = new ArrayList<>();
+
+        //if we're dealing with a class variable
+        if (currentMethod == null || currentMethod.getLocalVariable(ctx.ID().getText()) == null) {
+            //get this
+            code.add("aload_0\n");
+
+            //make class variable code
+            code.add("getfield MyTest/" + ctx.ID().getText() + " " + giveByteCodeMethodType(new DataType(DataTypeEnum.STRING)) + "\n");
+            return code;
+        }
 
         //Load localParameter(Object)
         code.add("aload_" + currentMethod.getLocalVariable(ctx.ID().getText()).getPosition() + "\n");
@@ -866,7 +978,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         code.add(".method public " + method.getIdentifier() + "(");
 
         //for each parameter of the method
-        for (int i = 0; i < list.size(); i++){
+        for (int i = 0; i < list.size(); i++) {
             code.add(giveByteCodeMethodType((DataType) list.get(i)));
         }
 
@@ -874,7 +986,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         code.add(")" + giveByteCodeMethodType(method.getMethodType().getReturnType()) + "\n");
 
         //add stack and local size
-        code.add(".limit stack 100\n.limit locals 100\n");
+        code.add(".limit stack 5\n.limit locals 5\n");
 
         //visit children
         code.addAll(visitChildrenWithoutNull(ctx));
@@ -895,11 +1007,12 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
      * Boolean => I
      * String => Ljava/lang/String
      * Void => V
+     *
      * @param dataType datatype for wich to write bytecode
-     * @return  bytecode datatype
+     * @return bytecode datatype
      */
-    public String giveByteCodeMethodType(DataType dataType){
-        switch (dataType.getType()){
+    public String giveByteCodeMethodType(DataType dataType) {
+        switch (dataType.getType()) {
             case "STRING":
                 return "Ljava/lang/String;";
             case "BOOLEAN":
@@ -939,7 +1052,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         List methodParameters = method.getMethodType().getParameters();
 
         //add parameters code
-        for (int i = 0; i < methodParameters.size(); i++){
+        for (int i = 0; i < methodParameters.size(); i++) {
             code.add(giveByteCodeMethodType((DataType) methodParameters.get(i)));
         }
 
@@ -998,9 +1111,8 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         code.addAll(visitChildrenWithoutNull(ctx));
 
 
-
         //add code depending on returnType
-        switch (currentMethod.getMethodType().getReturnType().getType()){
+        switch (currentMethod.getMethodType().getReturnType().getType()) {
             case "STRING":
                 code.add("areturn\n");
                 break;

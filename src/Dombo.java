@@ -3,6 +3,8 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -45,13 +47,11 @@ public class Dombo {
 
         // Ask for expression
         System.out.print("Test> ");
-        String line = "START function void main(){\n" +
-                "   String test = do myFunction();\n" +
-                "   test = test append 53;\n" +
-                "   int x = 3 + 5;\n" +
-                "   x = x + 7;\n" +
-                "   String x = readLine;\n" +
-                "   print x append false;\n" +
+        String line = "String global = \"globalVariableHere\";\n" +
+                "String empty;\n" +
+                "\n" +
+                "START function void main(){\n" +
+                "   String test = \"\" append 3 append 4 append 5 append 6;\n" +
                 "   \n" +
                 "   return void;\n" +
                 "}\n" +
@@ -65,11 +65,29 @@ public class Dombo {
 
         //Print byteCodeResult
         ArrayList<String> byteCode = evaluate(line);
-        String string = "";
-        for (int i = 0; i < byteCode.size(); i++) {
-            string += byteCode.get(i);
+
+//        //make code a whole
+//        String string = "";
+//        for (int i = 0; i < byteCode.size(); i++) {
+//            string += byteCode.get(i);
+//        }
+
+        //write result to a file
+        try{
+            PrintWriter writer = new PrintWriter("MyTest.j", "UTF-8");
+
+            for (int i = 0; i < byteCode.size(); i++) {
+                writer.write(byteCode.get(i));
+            }
+
+            //close write
+            writer.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        System.out.println(string);
+
+//        System.out.println(string);
 
 
         System.out.println("KTHNXBYE");
