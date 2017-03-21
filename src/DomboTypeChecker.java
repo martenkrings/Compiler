@@ -608,6 +608,9 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         //Cast type to methodType
         MethodType methodType = (MethodType) type;
 
+        //Add method type to parseTreePropperty
+        Dombo.parseTreeProperty.put(ctx, new Method(ctx.name.getText(), methodType));
+
         //Collect parameter DataTypes
         ArrayList<DataType> dataTypes = new ArrayList<>();
         for (int i = 0; i < ctx.parameter().size(); i++) {
@@ -750,6 +753,9 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitReadCommand(DomboParser.ReadCommandContext ctx) {
+        //set a boolean for DomboJasminGenerator
+        DomboJasminGenerator.hasReadStatement = true;
+
         //return String dataType
         return new DataType(DataTypeEnum.STRING);
     }

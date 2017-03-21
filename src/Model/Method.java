@@ -11,6 +11,7 @@ import java.util.List;
 public class Method {
     private String identifier;
     private MethodType methodType;
+    private Method parentMethod;
 
     //Contains localVariables findable by their identifier
     private HashMap<String, LocalByteCodeParameter> localVariables;
@@ -24,6 +25,9 @@ public class Method {
         this.identifier = identifier;
         this.methodType = methodType;
         this.localVariables = new HashMap<>();
+
+        //add this reference on localVariables
+        localVariables.put("this", new LocalByteCodeParameter(0, new DataType(DataTypeEnum.VOID)));
     }
 
     /**
@@ -60,5 +64,13 @@ public class Method {
 
         //add new variable
         localVariables.put(variableIdentifier, new LocalByteCodeParameter(localVariables.size(), dataType));
+    }
+
+    public Method getParentMethod() {
+        return parentMethod;
+    }
+
+    public void setParentMethod(Method parentMethod) {
+        this.parentMethod = parentMethod;
     }
 }

@@ -11,6 +11,7 @@ import java.util.List;
  * Created by Sander on 6-3-2017.
  */
 public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
+    static boolean hasReadStatement = false;
     private Method currentMethod;
     private int lastLabelCreated;
 
@@ -113,19 +114,28 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //Init arrayList
         ArrayList<String> code = new ArrayList<>();
 
-        //Add code for main method
+        //Add code for main method ('secretly starts a run method')
         code.add(
                 " ; Model.Method definition for public static void main(String[] args)\n" +
-                        " .method public static main([Ljava/lang/String;)V\n" +
-                        " .limit stack 100 ; Size of the operand stack\n" +
-                        " .limit locals 100 ; Number of parameters + locals\n\n");
+                        ".method public static main([Ljava/lang/String;)V\n" +
+                        ".limit stack 100 ; Size of the operand stack\n" +
+                        ".limit locals 100 ; Number of parameters + locals\n" +
+                        "new MyTest\n" +
+                        "dup\n" +
+                        "invokenonvirtual MyTest/<init>()V\n" +
+                        "invokevirtual MyTest/run()V\n" +
+                        " return\n" +
+                        ".end method\n\n" +
+                        ".method public run()V\n" +
+                        ".limit stack 100 ; Size of the operand stack\n" +
+                        ".limit locals 100 ; Number of parameters + locals\n" );
 
         //Add children code
         code.addAll(visitChildrenWithoutNull(ctx));
 
         //Add code for ending method
         code.add(
-                " \n\nreturn\n" +
+                " \nreturn\n" +
                         ".end method\n\n");
 
         //Returnr
@@ -137,11 +147,22 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //init arrayList
         ArrayList<String> code = new ArrayList<>();
 
+        //get the current variable we're visiting
+        Variable variable = (Variable) Dombo.parseTreeProperty.get(ctx);
+
+        //if we're defining globals
+        if (currentMethod == null){
+            //code for defining global
+            code.add("field private static global" + variable.getIdentifier() + " " + giveByteCodeMethodType(variable.getDataType()) + "\n");
+
+            //return
+            return code;
+        }
+
         //visit children
         code.addAll(visitChildrenWithoutNull(ctx));
 
-        //get the current variable we're visiting
-        Variable variable = (Variable) Dombo.parseTreeProperty.get(ctx);
+
 
         //push top of stack to a new local variable
         code.addAll(pushTopOfStackToLocalVariables(variable.getDataType(), variable.getIdentifier()));
@@ -170,14 +191,24 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     @Override
     public ArrayList<String> visitGenericVarDeclaration(DomboParser.GenericVarDeclarationContext ctx) {
-        //Generic var declaration has no java bytecode code
-        //Add nothing to code
-        return null;
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+        //get varaible
+        Variable variable = (Variable) Dombo.parseTreeProperty.get(ctx);
+
+        //Generic var declaration only has byte code for globals
+        if (currentMethod == null){
+            code.add(".field private static " + variable.getIdentifier() + " " + giveByteCodeMethodType(variable.getDataType()) + "\n");
+        }
+
+        //return
+        return code;
     }
 
     @Override
     public ArrayList<String> visitBlock(DomboParser.BlockContext ctx) {
-        //todo
+        //Visit children
         return visitChildrenWithoutNull(ctx);
     }
 
@@ -503,7 +534,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         ArrayList<String> code = new ArrayList<>();
 
         code.add("new java/lang/StringBuilder\n" +
-                "dup\n" +
+                "dup\ndup\n" +
                 "invokespecial\tjava/lang/StringBuilder/<init>()V ; Call string builder constructor\n");
 
         //Add StringExpression code
@@ -804,6 +835,11 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //get current method
         Method method = (Method) Dombo.parseTreeProperty.get(ctx);
 
+        //change current method and set its parent method
+        Method temp = currentMethod;
+        currentMethod = method;
+        currentMethod.setParentMethod(temp);
+
         //get list of the methods parameters
         List list = method.getMethodType().getParameters();
 
@@ -812,11 +848,11 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
         //for each parameter of the method
         for (int i = 0; i < list.size(); i++){
-            code.add(giveJasminMethodType((DataType) list.get(i)));
+            code.add(giveByteCodeMethodType((DataType) list.get(i)));
         }
 
         //add returnType
-        code.add(")" + giveJasminMethodType(method.getMethodType().getReturnType()) + "\n");
+        code.add(")" + giveByteCodeMethodType(method.getMethodType().getReturnType()) + "\n");
 
         //add stack and local size
         code.add(".limit stack 100\n.limit locals 100\n");
@@ -826,6 +862,9 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
         //add end of method code
         code.add(".end method\n");
+
+        //change current method, a normal method will always have a parent method
+        currentMethod = currentMethod.getParentMethod();
 
         //return
         return code;
@@ -840,7 +879,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
      * @param dataType datatype for wich to write bytecode
      * @return  bytecode datatype
      */
-    public String giveJasminMethodType(DataType dataType){
+    public String giveByteCodeMethodType(DataType dataType){
         switch (dataType.getType()){
             case "STRING":
                 return "Ljava/lang/String";
@@ -852,7 +891,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
                 return "V";
 
             default:
-                return "SHOULD NOT REACH THIS CODE, giveJasminMethodType";
+                return "SHOULD NOT REACH THIS CODE, giveByteCodeMethodType";
         }
     }
 
@@ -863,7 +902,33 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     @Override
     public ArrayList<String> visitFunction(DomboParser.FunctionContext ctx) {
-        return super.visitFunction(ctx);
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+        //Get the method we're calling
+        Method method = (Method) Dombo.parseTreeProperty.get(ctx);
+
+        //TODO ask this
+
+        //load this reference
+        code.add("aload_0 ;load this reference\n");
+
+        //add start code of function call
+        code.add("invokevirtual MyTest/" + method.getIdentifier() + "(");
+
+        //get parameter List
+        List methodParameters = method.getMethodType().getParameters();
+
+        //add parameters code
+        for (int i = 0; i < methodParameters.size(); i++){
+            code.add(giveByteCodeMethodType((DataType) methodParameters.get(i)));
+        }
+
+        //add returnType code
+        code.add(")" + giveByteCodeMethodType(method.getMethodType().getReturnType()) + "\n");
+
+        //return
+        return code;
     }
 
     @Override
@@ -886,7 +951,23 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     @Override
     public ArrayList<String> visitReadCommand(DomboParser.ReadCommandContext ctx) {
-        return super.visitReadCommand(ctx);
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+        //new Scanner
+        code.add("new java/util/Scanner\ndup\n");
+
+        //get input stream
+        code.add("getstatic\tjava/lang/System.in ljava/io/InputStream\n");
+
+        //call constructor
+        code.add("invokespecial\tjava/util/Scanner/<init>()V\n");
+
+        //get nextLine
+        code.add("invokevirtual\tjava/util/Scanner/nextLine()Ljava/lang/String");
+
+        //return
+        return code;
     }
 
     @Override
@@ -896,6 +977,8 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
         //visit returned expression
         code.addAll(visitChildrenWithoutNull(ctx));
+
+
 
         //add code depending on returnType
         switch (currentMethod.getMethodType().getReturnType().getType()){

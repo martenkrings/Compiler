@@ -46,12 +46,14 @@ public class Dombo {
         // Ask for expression
         System.out.print("Test> ");
         String line = "START function void main(){\n" +
-                "         String s = \"hallo\";\n" +
-                "         return void;\n" +
+                "   String test = do myFunction();\n" +
+                "   print test;\n" +
+                "   \n" +
+                "   return void;\n" +
                 "}\n" +
                 "\n" +
-                "function void testFunctie (){\n" +
-                "    return void;\n" +
+                "function String myFunction(){\n" +
+                "    return \"van binnen een function\";\n" +
                 "}";
         System.out.println(line);
 
