@@ -525,7 +525,26 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     @Override
     public ArrayList<String> visitStringAddOp(DomboParser.StringAddOpContext ctx) {
-        return super.visitStringAddOp(ctx);
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+        code.add("new java/lang/StringBuilder\n" +
+                "dup\n" +
+                "invokespecial\tjava/lang/StringBuilder/<init>()V ; Call string builder constructor\n");
+
+        //Add StringExpression code
+        code.addAll(visit(ctx.left));
+
+        code.add("invokevirtual\tjava/lang/StringBuilder.append(Ljava/lang/String;)Ljava/lang/StringBuilder; ;String to StringBuilder\n");
+
+        code.addAll(visit(ctx.right));
+
+        code.add("invokevirtual\tjava/lang/StringBuilder.append(Ljava/lang/String;)Ljava/lang/StringBuilder; ;Append second String to StringBuilder\n" +
+                "invokevirtual\tjava/lang/StringBuilder.toString()Ljava/lang/String; ;Call toString from StringBuilder\n" +
+                "astore_2\n" +
+                "aload_2\n");
+
+        return code;
     }
 
     @Override
@@ -534,18 +553,18 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         ArrayList<String> code = new ArrayList<>();
 
         code.add("new java/lang/StringBuilder\n" +
-                "dup\ndup\n" +
+                "dup\n" +
                 "invokespecial\tjava/lang/StringBuilder/<init>()V ; Call string builder constructor\n");
 
         //Add StringExpression code
         code.addAll(visit(ctx.stringExpression()));
 
-        code.add("invokevirtual\tjava/lang/StringBuilder.append(Ljava/lang/String;)V ;String number to StringBuilder\n");
+        code.add("invokevirtual\tjava/lang/StringBuilder.append(Ljava/lang/String;)Ljava/lang/StringBuilder; ;String to StringBuilder\n");
 
         code.addAll(visit(ctx.expression()));
 
-        code.add("invokevirtual\tjava/lang/StringBuilder.append(I)V ;Append number to StringBuilder\n" +
-                "invokevirtual\tjava/lang/StringBuilder.toString()V ;Call toString from StringBuilder\n" +
+        code.add("invokevirtual\tjava/lang/StringBuilder.append(I)Ljava/lang/StringBuilder; ;Append number to StringBuilder\n" +
+                "invokevirtual\tjava/lang/StringBuilder.toString()Ljava/lang/String; ;Call toString from StringBuilder\n" +
                 "astore_2\n" +
                 "aload_2\n");
 
@@ -882,7 +901,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
     public String giveByteCodeMethodType(DataType dataType){
         switch (dataType.getType()){
             case "STRING":
-                return "Ljava/lang/String";
+                return "Ljava/lang/String;";
             case "BOOLEAN":
                 return "I";
             case "INT":
@@ -958,13 +977,13 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         code.add("new java/util/Scanner\ndup\n");
 
         //get input stream
-        code.add("getstatic\tjava/lang/System.in ljava/io/InputStream\n");
+        code.add("getstatic\tjava/lang/System.in Ljava/io/InputStream;\n");
 
         //call constructor
-        code.add("invokespecial\tjava/util/Scanner/<init>()V\n");
+        code.add("invokespecial\tjava/util/Scanner/<init>(Ljava/io/InputStream;)V\n");
 
         //get nextLine
-        code.add("invokevirtual\tjava/util/Scanner/nextLine()Ljava/lang/String");
+        code.add("invokevirtual\tjava/util/Scanner/nextLine()Ljava/lang/String;\n");
 
         //return
         return code;

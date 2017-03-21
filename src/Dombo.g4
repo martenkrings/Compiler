@@ -50,7 +50,7 @@ logicExpression : BOOLEANVALUE                                                  
 
 stringExpression : STRINGVALUE                                                      #StringValue
                 | ID                                                                #StringVariable
-                | stringExpression '+' expression                                   #StringWithExpression
+                | stringExpression 'append' expression                                   #StringWithExpression
                 | readStatement                                                     #StringReadStatement
                 | left=stringExpression '+' right=stringExpression                  #StringAddOp
                 ;

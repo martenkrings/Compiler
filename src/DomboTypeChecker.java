@@ -39,6 +39,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     /**
      * Compares 2 dataTypes
+     *
      * @param d1 first dataType to compare
      * @param d2 second dataType(String) to compare
      * @return true if of same type else false
@@ -64,7 +65,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         definingFunction = false;
 
         //visit global var declarations
-        for (int i = 0; i < ctx.statement().size(); i++){
+        for (int i = 0; i < ctx.statement().size(); i++) {
             DomboParser.VarDecContext varDecContext = ctx.statement().get(i).varDec();
             if (varDecContext != null) {
                 visit(ctx.statement().get(i).varDec());
@@ -93,7 +94,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         scopes.add(new Scope(scopes.peek(), new DataType(DataTypeEnum.VOID)));
 
         //visit children
-        DataType dataType =  super.visitStartFunctionDec(ctx);
+        DataType dataType = super.visitStartFunctionDec(ctx);
 
         //remove scope
         scopes.pop();
@@ -146,7 +147,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         DataType actualDataType = visit(ctx.value);
 
         //var name is not allowed to be RETURN
-        if (ctx.ID().getText().equals("RETURN")){
+        if (ctx.ID().getText().equals("RETURN")) {
             try {
                 throw new TypeError("Model.Variable name can not be RETURN");
             } catch (TypeError typeError) {
@@ -162,6 +163,15 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
                 } catch (TypeError typeError) {
                     typeError.printStackTrace();
                 }
+            }
+        }
+
+        //If variable already exisit throw new typeError
+        if (scopes.peek().lookUpVariable(ctx.ID().getText()) != null) {
+            try {
+                throw new TypeError("Variable " + ctx.ID().getText() + " already defined. At: " + ctx.start.getLine());
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
             }
         }
 
@@ -181,6 +191,15 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
     public DataType visitGenericVarDeclaration(DomboParser.GenericVarDeclarationContext ctx) {
         //Add a new variable to the current scope
         scopes.peek().declareVariable(ctx.ID().getText(), new DataType(ctx.DATATYPE().getText()));
+
+        //if variable already exist than throw new TypeError
+        if (scopes.peek().lookUpVariable(ctx.ID().getText()) != null) {
+            try {
+                throw new TypeError("Variable " + ctx.ID().getText() + " already defined. At: " + ctx.start.getLine());
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
+            }
+        }
 
         //Add variable to parseTreeProperty
         Dombo.parseTreeProperty.put(ctx, new Variable(ctx.ID().getText(), new DataType(ctx.DATATYPE().getText())));
@@ -533,7 +552,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
     @Override
     public DataType visitFunctionDeclaration(DomboParser.FunctionDeclarationContext ctx) {
         //If we're defining function in the scope that add this method to the scope
-        if (definingFunction){
+        if (definingFunction) {
             //Make list to store parameters
             ArrayList<DataType> dataTypes = new ArrayList();
 
@@ -549,7 +568,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
             Dombo.parseTreeProperty.put(ctx, new Method(ctx.name.getText(), new MethodType(new DataType(ctx.returntype.getText()), dataTypes)));
 
             //else visit all children in a new scope
-        }else {
+        } else {
 
             //Make new Model.Scope
             scopes.add(new Scope(scopes.peek(), new DataType(ctx.returntype.getText())));
@@ -765,7 +784,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         //get return Model.DataType
         DataType dataType = visit(ctx.expression());
 
-        if (!checkReturnType(dataType, ctx.getStart().getLine())){
+        if (!checkReturnType(dataType, ctx.getStart().getLine())) {
             return null;
         }
 
@@ -777,22 +796,22 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
     public DataType visitReturnVoidCommand(DomboParser.ReturnVoidCommandContext ctx) {
         DataType dataType = new DataType(DataTypeEnum.VOID);
 
-        if (!checkReturnType(dataType, ctx.getStart().getLine())){
+        if (!checkReturnType(dataType, ctx.getStart().getLine())) {
             return null;
         }
         return dataType;
     }
 
-    public boolean checkReturnType(DataType dataType, int lineNumber){
+    public boolean checkReturnType(DataType dataType, int lineNumber) {
         Symbol symbol = null;
 
         //get the RETURN value
-        if (scopes.get(1).lookUpVariable("RETURN") != null){
+        if (scopes.get(1).lookUpVariable("RETURN") != null) {
             symbol = scopes.get(1).lookUpVariable("RETURN");
         }
 
         //If return statement without method throw new Model.TypeError
-        if (symbol == null){
+        if (symbol == null) {
             try {
                 throw new TypeError("Return statement without method, At line: " + lineNumber);
             } catch (TypeError typeError) {
@@ -803,7 +822,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
         DataType temp = (DataType) symbol.type;
         //If returnType does not match with returning type throw new Model.TypeError
-        if (!temp.getType().equalsIgnoreCase(dataType.getType())){
+        if (!temp.getType().equalsIgnoreCase(dataType.getType())) {
             try {
                 throw new TypeError("Invalid return type, got: " + dataType.getType() + " expected: " + temp.getType() + "At line: " + lineNumber);
             } catch (TypeError typeError) {

@@ -47,13 +47,17 @@ public class Dombo {
         System.out.print("Test> ");
         String line = "START function void main(){\n" +
                 "   String test = do myFunction();\n" +
-                "   print test;\n" +
+                "   test = test append 53;\n" +
+                "   int x = 3 + 5;\n" +
+                "   x = x + 7;\n" +
+                "   String x = readLine;\n" +
+                "   print x append false;\n" +
                 "   \n" +
                 "   return void;\n" +
                 "}\n" +
                 "\n" +
                 "function String myFunction(){\n" +
-                "    return \"van binnen een function\";\n" +
+                "    return \"banaan\";\n" +
                 "}";
         System.out.println(line);
 
