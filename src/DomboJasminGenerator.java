@@ -12,6 +12,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
     private Method currentMethod;
     private int lastLabelCreated;
 
+
     //List that is fileld by TypeChecker
     public static ArrayList<Variable> classVariables = new ArrayList<>();
 
@@ -174,6 +175,15 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //Init arrayList
         ArrayList<String> code = new ArrayList<>();
 
+        //number of locals is vardecs + this reference
+        int numberOfLocals = 1;
+
+        for (int i = 0; i < ctx.statement().size(); i++){
+            if (ctx.statement().get(i).varDec() != null){
+                numberOfLocals++;
+            }
+        }
+
         //Add code for main method ('secretly starts a run method')
         code.add(
                 " ; Model.Method definition for public static void main(String[] args)\n" +
@@ -188,7 +198,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
                         ".end method\n\n" +
                         ".method public run()V\n" +
                         ".limit stack 5 ; Size of the operand stack\n" +
-                        ".limit locals 5 ; Number of parameters + locals\n");
+                        ".limit locals " + numberOfLocals + " ; Number of parameters + locals\n");
 
         //Add children code
         code.addAll(visitChildrenWithoutNull(ctx));
@@ -985,8 +995,17 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //add returnType
         code.add(")" + giveByteCodeMethodType(method.getMethodType().getReturnType()) + "\n");
 
+        //number of locals is vardecs + this reference
+        int numberOfLocals = 1;
+
+        for (int i = 0; i < ctx.statement().size(); i++){
+            if (ctx.statement().get(i).varDec() != null){
+                numberOfLocals++;
+            }
+        }
+
         //add stack and local size
-        code.add(".limit stack 5\n.limit locals 5\n");
+        code.add(".limit stack 5\n.limit locals " + numberOfLocals + "\n");
 
         //visit children
         code.addAll(visitChildrenWithoutNull(ctx));

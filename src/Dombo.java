@@ -47,17 +47,13 @@ public class Dombo {
 
         // Ask for expression
         System.out.print("Test> ");
-        String line = "String global = \"globalVariableHere\";\n" +
-                "String empty;\n" +
-                "\n" +
-                "START function void main(){\n" +
-                "   String test = \"\" append 3 append 4 append 5 append 6;\n" +
+        String line = "START function void main(){\n" +
+                "   print \"Wat is uw naam\";\n" +
+                "   String answer = readLine;\n" +
+                "   String response = \"Hallo \" append S answer;\n" +
+                "   print S response;\n" +
                 "   \n" +
                 "   return void;\n" +
-                "}\n" +
-                "\n" +
-                "function String myFunction(){\n" +
-                "    return \"banaan\";\n" +
                 "}";
         System.out.println(line);
 
@@ -65,12 +61,6 @@ public class Dombo {
 
         //Print byteCodeResult
         ArrayList<String> byteCode = evaluate(line);
-
-//        //make code a whole
-//        String string = "";
-//        for (int i = 0; i < byteCode.size(); i++) {
-//            string += byteCode.get(i);
-//        }
 
         //write result to a file
         try{
@@ -86,9 +76,6 @@ public class Dombo {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-//        System.out.println(string);
-
 
         System.out.println("KTHNXBYE");
     }

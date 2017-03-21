@@ -35,24 +35,24 @@ expression      : calcExpression
 variableAssign: name=ID '=' value=expression;
 
 calcExpression  : INT                                                               #IntValue
-                | ID                                                                #IntVariable
+                | 'I' ID                                                                #IntVariable
                 | '-' calcExpression                                                #NegateOp
                 | left=calcExpression op=('*' | '/' | '%') right=calcExpression     #MulOp
                 | left=calcExpression op=('+' | '-') right=calcExpression           #AddOp
                 ;
 
 logicExpression : BOOLEANVALUE                                                                                  #BoolValue
-                | ID                                                                                            #BoolVariable
+                | 'B' ID                                                                                            #BoolVariable
                 | leftLogic=logicExpression op=('==' | '!=') rightLogic=logicExpression                         #LogicComparator
                 | leftCalc=calcExpression op=('<' | '>' | '>=' | '<=' | '==' | '!=') rightCalc=calcExpression   #CalcComparator
                 | ('!' | 'not') '(' logicExpression ')'                                                         #NotOp
                 ;
 
 stringExpression : STRINGVALUE                                                      #StringValue
-                | ID                                                                #StringVariable
+                | 'S' ID                                                                #StringVariable
+                | left=stringExpression 'append' right=stringExpression                  #StringAddOp
                 | stringExpression 'append' expression                                   #StringWithExpression
                 | readStatement                                                     #StringReadStatement
-                | left=stringExpression '+' right=stringExpression                  #StringAddOp
                 ;
 
 ifStatement     : 'if' '(' condition=logicExpression ')' block                          #IfSingleStatement

@@ -75,6 +75,13 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
         //visit the START function
         visit(ctx.startFunctionDec());
 
+        //visit functions again without definingFunction on true
+        for (int i = 0; i < ctx.functionDec().size(); i++) {
+            if (ctx.functionDec().get(i) != null) {
+                visit(ctx.functionDec(i));
+            }
+        }
+
         //return 'something'
         return null;
     }
@@ -139,6 +146,15 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitVarDeclaration(DomboParser.VarDeclarationContext ctx) {
+        //if variable already exist than throw new TypeError
+        if (scopes.peek().lookUpVariable(ctx.ID().getText()) != null) {
+            try {
+                throw new TypeError("Variable " + ctx.ID().getText() + " already defined. At: " + ctx.start.getLine());
+            } catch (TypeError typeError) {
+                typeError.printStackTrace();
+            }
+        }
+
         //Get declared dataType and actual dataType
         String datatype = ctx.DATATYPE().getText();
         DataType actualDataType = visit(ctx.value);
@@ -567,9 +583,6 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
             //declare new method in scope
             scopes.peek().declareMethod(ctx.name.getText(), new DataType(ctx.returntype.getText()), dataTypes);
 
-            //Add new method to parseTreeProperty
-            Dombo.parseTreeProperty.put(ctx, new Method(ctx.name.getText(), new MethodType(new DataType(ctx.returntype.getText()), dataTypes)));
-
             //else visit all children in a new scope
         } else {
 
@@ -592,6 +605,9 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
             //remove Model.Scope
             scopes.pop();
+
+            //Add new method to parseTreeProperty
+            Dombo.parseTreeProperty.put(ctx, new Method(ctx.name.getText(), new MethodType(new DataType(ctx.returntype.getText()), dataTypes)));
         }
 
         //return 'something'
