@@ -32,6 +32,31 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         return code;
     }
 
+    /**
+     * Gives bytecode method type for DataTypes
+     * Integer => I
+     * Boolean => I
+     * String => Ljava/lang/String;
+     * Void => V
+     *
+     * @param dataType datatype for wich to write bytecode
+     * @return bytecode datatype
+     */
+    private String giveByteCodeMethodType(DataType dataType) {
+        switch (dataType.getType()) {
+            case "STRING":
+                return "Ljava/lang/String;";
+            case "BOOLEAN":
+                return "I";
+            case "INT":
+                return "I";
+            case "VOID":
+                return "V";
+
+            default:
+                return "SHOULD NOT REACH THIS CODE, giveByteCodeMethodType";
+        }
+    }
 
     /**
      * method that find a class variable by its identifier
@@ -1021,32 +1046,6 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
         //return
         return code;
-    }
-
-    /**
-     * Gives bytecode method type for DataTypes
-     * Integer => I
-     * Boolean => I
-     * String => Ljava/lang/String
-     * Void => V
-     *
-     * @param dataType datatype for wich to write bytecode
-     * @return bytecode datatype
-     */
-    public String giveByteCodeMethodType(DataType dataType) {
-        switch (dataType.getType()) {
-            case "STRING":
-                return "Ljava/lang/String;";
-            case "BOOLEAN":
-                return "I";
-            case "INT":
-                return "I";
-            case "VOID":
-                return "V";
-
-            default:
-                return "SHOULD NOT REACH THIS CODE, giveByteCodeMethodType";
-        }
     }
 
     @Override

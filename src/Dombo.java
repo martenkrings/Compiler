@@ -3,8 +3,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -46,21 +45,26 @@ public class Dombo {
         Scanner s = new Scanner(System.in);
 
         // Ask for expression
-        System.out.print("Test> ");
-        String line = "START function void main(){\n" +
-                "   String s = do appendStringNumber(\"hey\", 1);\n" +
-                "   \n" +
-                "   print S s;\n" +
-                "   return void;\n" +
-                "}\n" +
-                "\n" +
-                "function String appendStringNumber(String s, int i){\n" +
-                "    String result = S s append I i;\n" +
-                "    \n" +
-                "    return S result;\n" +
-                "}";
-        System.out.println(line);
+        System.out.print("Enter dombo file name> ");
 
+        //Read Filename
+        Scanner scanner = new Scanner(System.in);
+        String fileName = scanner.nextLine();
+        scanner.close();
+
+        //readFile
+        String line = null;
+        try {
+            Scanner fileScanner = new Scanner(new File(fileName + ".dombo"));
+            line = fileScanner.useDelimiter("\\Z").next();
+        } catch (FileNotFoundException e) {
+            System.out.println("Could not find file or file corrupt");
+
+            System.out.println("\nError message:");
+            System.out.println(e.getMessage());
+        }
+
+        //print line breaker
         System.out.println("--> ");
 
         //Print byteCodeResult
@@ -69,7 +73,6 @@ public class Dombo {
         //write result to a file
         try{
             PrintWriter writer = new PrintWriter("MyTest.j", "UTF-8");
-
             for (int i = 0; i < byteCode.size(); i++) {
                 writer.write(byteCode.get(i));
             }
