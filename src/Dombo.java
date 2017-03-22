@@ -48,12 +48,16 @@ public class Dombo {
         // Ask for expression
         System.out.print("Test> ");
         String line = "START function void main(){\n" +
-                "   print \"Wat is uw naam\";\n" +
-                "   String answer = readLine;\n" +
-                "   String response = \"Hallo \" append S answer;\n" +
-                "   print S response;\n" +
+                "   String s = do appendStringNumber(\"hey\", 1);\n" +
                 "   \n" +
+                "   print S s;\n" +
                 "   return void;\n" +
+                "}\n" +
+                "\n" +
+                "function String appendStringNumber(String s, int i){\n" +
+                "    String result = S s append I i;\n" +
+                "    \n" +
+                "    return S result;\n" +
                 "}";
         System.out.println(line);
 

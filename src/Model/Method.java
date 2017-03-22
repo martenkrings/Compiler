@@ -27,7 +27,7 @@ public class Method {
         this.localVariables = new HashMap<>();
 
         //add this reference on localVariables
-        localVariables.put("this", new LocalByteCodeParameter(0, new DataType(DataTypeEnum.VOID)));
+        localVariables.put("this", new LocalByteCodeParameter(0, new DataType(DataTypeEnum.STRING)));
     }
 
     /**

@@ -975,6 +975,10 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //get current method
         Method method = (Method) Dombo.parseTreeProperty.get(ctx);
 
+        for (String key:method.getLocalVariables().keySet()){
+            System.out.println(key + " " + method.getLocalVariable(key).getDataType().getType() + " " + method.getLocalVariable(key).getPosition());
+        }
+
         //change current method and set its parent method
         Method temp = currentMethod;
         currentMethod = method;
@@ -995,7 +999,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         code.add(")" + giveByteCodeMethodType(method.getMethodType().getReturnType()) + "\n");
 
         //number of locals is vardecs + this reference
-        int numberOfLocals = 1;
+        int numberOfLocals = 1 + ctx.functionParameter().size();
 
         for (int i = 0; i < ctx.statement().size(); i++){
             if (ctx.statement().get(i).varDec() != null){
@@ -1058,20 +1062,20 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //Get the method we're calling
         Method method = (Method) Dombo.parseTreeProperty.get(ctx);
 
-        //TODO ask this
-
         //load this reference
         code.add("aload_0 ;load this reference\n");
+
+        //add parameters code
+        for (int i = 0; i < ctx.parameter().size(); i++) {
+            code.addAll(visit(ctx.parameter(i)));
+        }
 
         //add start code of function call
         code.add("invokevirtual MyTest/" + method.getIdentifier() + "(");
 
-        //get parameter List
-        List methodParameters = method.getMethodType().getParameters();
-
-        //add parameters code
-        for (int i = 0; i < methodParameters.size(); i++) {
-            code.add(giveByteCodeMethodType((DataType) methodParameters.get(i)));
+        //add parameter call code
+        for (int i = 0; i < method.getMethodType().getParameters().size(); i++) {
+            code.add(giveByteCodeMethodType(method.getMethodType().getParameters().get(i)));
         }
 
         //add returnType code
@@ -1151,16 +1155,31 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     @Override
     public ArrayList<String> visitStringParameter(DomboParser.StringParameterContext ctx) {
-        return super.visitStringParameter(ctx);
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+        code.addAll(visit(ctx.stringExpression()));
+
+        return code;
     }
 
     @Override
     public ArrayList<String> visitCalcParameter(DomboParser.CalcParameterContext ctx) {
-        return super.visitCalcParameter(ctx);
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+        code.addAll(visit(ctx.calcExpression()));
+
+        return code;
     }
 
     @Override
     public ArrayList<String> visitLogicParameter(DomboParser.LogicParameterContext ctx) {
-        return super.visitLogicParameter(ctx);
+        //init ArrayList
+        ArrayList<String> code = new ArrayList<>();
+
+        code.addAll(visit(ctx.logicExpression()));
+
+        return code;
     }
 }

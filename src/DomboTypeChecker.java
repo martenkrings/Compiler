@@ -2,6 +2,7 @@
 import Model.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Stack;
 
 /**
@@ -597,6 +598,16 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
                 dataTypes.add(visit(ctx.functionParameter().get(i)));
             }
 
+            //make a new method for the parseTreePropperty
+            Method newMethod = new Method(ctx.name.getText(), new MethodType(new DataType(ctx.returntype.getText()), dataTypes));
+
+            //add parameters
+            for (String key: scopes.peek().getSymbolTable().keySet()){
+                if (!key.equalsIgnoreCase("RETURN")) {
+                    newMethod.storeLocalVariable(key, (DataType) scopes.peek().lookUpVariable(key).type);
+                }
+            }
+
             //visit children
             for (int i = 0; i < ctx.statement().size(); i++) {
                 visit(ctx.statement(i));
@@ -607,7 +618,7 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
             scopes.pop();
 
             //Add new method to parseTreeProperty
-            Dombo.parseTreeProperty.put(ctx, new Method(ctx.name.getText(), new MethodType(new DataType(ctx.returntype.getText()), dataTypes)));
+            Dombo.parseTreeProperty.put(ctx, newMethod);
         }
 
         //return 'something'

@@ -38,29 +38,23 @@ public class Scope {
         return s;
     }
 
+    public Map<String, Symbol> getSymbolTable() {
+        return symbolTable;
+    }
+
     public Symbol declareMethod(String identifier, DataType returnType, List<DataType> parameters) {
         Symbol s = new Symbol(identifier, new MethodType(returnType, parameters));
 
         symbolTable.put(identifier, s);
 
         return s;
+
+
     }
 
     @Nullable
     public Symbol lookUpVariable(String identifier) {
         return symbolTable.get(identifier);
-    }
-
-    public Symbol lookUpMethod(String identifier) {
-        return symbolTable.get(identifier);
-    }
-
-    public Scope openScope() {
-        return new Scope(this);
-    }
-
-    public Scope closeScope() {
-        return parentScope;
     }
 
     public Scope getParentScope() {

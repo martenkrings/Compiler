@@ -85,7 +85,7 @@ returnStatement : 'return'expression ';'                                        
                 | 'return void;'                                                        #ReturnVoidCommand
                 ;
 
-parameter       : STRINGVALUE                                                           #StringParameter
+parameter       : stringExpression                                                      #StringParameter
                 | calcExpression                                                        #CalcParameter
                 | logicExpression                                                       #LogicParameter
                 ;
