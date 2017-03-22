@@ -791,9 +791,6 @@ public class DomboTypeChecker extends DomboBaseVisitor<DataType> {
 
     @Override
     public DataType visitReadCommand(DomboParser.ReadCommandContext ctx) {
-        //set a boolean for DomboJasminGenerator
-        DomboJasminGenerator.hasReadStatement = true;
-
         //return String dataType
         return new DataType(DataTypeEnum.STRING);
     }

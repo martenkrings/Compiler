@@ -8,12 +8,11 @@ import java.util.List;
  * Created by Sander on 6-3-2017.
  */
 public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
-    static boolean hasReadStatement = false;
     private Method currentMethod;
     private int lastLabelCreated;
 
 
-    //List that is fileld by TypeChecker
+    //List that is filled by TypeChecker
     public static ArrayList<Variable> classVariables = new ArrayList<>();
 
     private ArrayList<String> visitChildrenWithoutNull(RuleNode ctx) {
