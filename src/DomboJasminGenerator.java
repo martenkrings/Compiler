@@ -287,10 +287,36 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
 
     @Override
     public ArrayList<String> visitGenericVarDeclaration(DomboParser.GenericVarDeclarationContext ctx) {
-        //init ArrayList
+        //init arrayList
         ArrayList<String> code = new ArrayList<>();
 
-        //return empty list
+        //get the current variable we're visiting
+        Variable variable = (Variable) Dombo.parseTreeProperty.get(ctx);
+
+        //change variable to a localByteCodeParameter
+        LocalByteCodeParameter dummy;
+
+        //if currentMethod == null than this is a class variable so change dummy to null
+        if (currentMethod == null) {
+            dummy = null;
+            //load this reference
+            code.add("aload_0\n");
+        } else {
+            //'transform' variable to localByteCodeParameter
+            dummy = new LocalByteCodeParameter(-1, variable.getDataType());
+        }
+
+        //add default value
+        if (variable.getDataType().getType().equalsIgnoreCase(DataTypeEnum.STRING.toString())) {
+            code.add("ldc \"\"\n");
+        } else {
+            code.add("ldc 0\n");
+        }
+
+        //push top of stack to a new local variable
+        code.addAll(pushTopOfStackToStorage(dummy, variable.getIdentifier()));
+
+        //return
         return code;
     }
 
