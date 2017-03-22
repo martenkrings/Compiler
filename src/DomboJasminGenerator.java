@@ -663,6 +663,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //init ArrayList
         ArrayList<String> code = new ArrayList<>();
 
+        //Add code that makes a new StringBuilder
         code.add("new java/lang/StringBuilder\n" +
                 "dup\n" +
                 "invokespecial\tjava/lang/StringBuilder/<init>()V ; Call string builder constructor\n");
@@ -670,15 +671,17 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //Add StringExpression code
         code.addAll(visit(ctx.stringExpression()));
 
+        //Add code to append String
         code.add("invokevirtual\tjava/lang/StringBuilder.append(Ljava/lang/String;)Ljava/lang/StringBuilder; ;String to StringBuilder\n");
 
+        //Add expression code
         code.addAll(visit(ctx.expression()));
 
+        //Add code to appenda number and chall the to String method
         code.add("invokevirtual\tjava/lang/StringBuilder.append(I)Ljava/lang/StringBuilder; ;Append number to StringBuilder\n" +
-                "invokevirtual\tjava/lang/StringBuilder.toString()Ljava/lang/String; ;Call toString from StringBuilder\n" +
-                "astore_2\n" +
-                "aload_2\n");
+                "invokevirtual\tjava/lang/StringBuilder.toString()Ljava/lang/String; ;Call toString from StringBuilder\n");
 
+        //return
         return code;
     }
 
@@ -975,10 +978,6 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //get current method
         Method method = (Method) Dombo.parseTreeProperty.get(ctx);
 
-        for (String key:method.getLocalVariables().keySet()){
-            System.out.println(key + " " + method.getLocalVariable(key).getDataType().getType() + " " + method.getLocalVariable(key).getPosition());
-        }
-
         //change current method and set its parent method
         Method temp = currentMethod;
         currentMethod = method;
@@ -1001,6 +1000,7 @@ public class DomboJasminGenerator extends DomboBaseVisitor<ArrayList<String>> {
         //number of locals is vardecs + this reference
         int numberOfLocals = 1 + ctx.functionParameter().size();
 
+        //count locals
         for (int i = 0; i < ctx.statement().size(); i++){
             if (ctx.statement().get(i).varDec() != null){
                 numberOfLocals++;

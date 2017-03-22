@@ -93,7 +93,7 @@ parameter       : stringExpression                                              
 DATATYPE        : 'int' | 'boolean' | 'String';
 RETURNTYPE      : 'void';
 BOOLEANVALUE    : 'true' | 'false';
-STRINGVALUE     : '"' ([A-Za-z0-9]| [ ])* '"';
+STRINGVALUE     : '"' ~["]* '"';
 ID              : [A-Za-z] [A-Za-z0-9]*;
 INT             : '0' | [1-9][0-9]*;
 WS              : [\r\n\t\f ]+ -> skip ;
